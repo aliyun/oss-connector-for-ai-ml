@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osstorchconnector"
+version = "1.0.0rc1"
+description = "OSS connector for AI/ML"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "torch >= 2.0",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Utilities",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["osstorchconnector", "osstorchconnector._oss_connector"]
+
+[tool.setuptools.package-data]
+osstorchconnector = ["_oss_connector/*.so"]
