@@ -1,6 +1,6 @@
 RELEASE_VERSION = "1.0.0rc1"
 
-PACKGE_NAME = "osstorchconnector"
+PACKAGE_NAME = "osstorchconnector"
 TAG_VER_LIST = [
     {
         "py": "cp38",

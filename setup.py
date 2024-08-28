@@ -1,17 +1,17 @@
 from setuptools import setup, find_packages
 from setuptools.command.sdist import sdist as _sdist
-from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 import os
 import time
 import urllib.request
 import shutil
-from ver_tag import RELEASE_VERSION, PACKGE_NAME, TAG_VER_LIST, get_url
+from ver_tag import RELEASE_VERSION, PACKAGE_NAME, TAG_VER_LIST, get_url
 
 
 WHEELS = [
     "%s-%s-%s-%s-%s.whl"
     % (
-        PACKGE_NAME,
+        PACKAGE_NAME,
         RELEASE_VERSION,
         tag_ver["py"],
         tag_ver["abi"],
