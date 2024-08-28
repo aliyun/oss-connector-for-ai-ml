@@ -1,56 +1,94 @@
-from setuptools import setup, Extension
-from setuptools.command.build_ext import build_ext
+from setuptools import setup, find_packages
+from setuptools.command.sdist import sdist as _sdist
+from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
 import os
-import subprocess
+import time
+import urllib.request
 import shutil
+from ver_tag import RELEASE_VERSION, PACKGE_NAME, TAG_VER_LIST, get_url
 
 
-class BuildExtension(Extension):
-    def __init__(self, name, source_dir=''):
-        Extension.__init__(self, name, sources=[source_dir])
-        self.source_dir = os.path.abspath(source_dir)
+WHEELS = [
+    "%s-%s-%s-%s-%s.whl"
+    % (
+        PACKGE_NAME,
+        RELEASE_VERSION,
+        tag_ver["py"],
+        tag_ver["abi"],
+        tag_ver["platform"],
+    )
+    for tag_ver in TAG_VER_LIST
+]
 
-class LibraryBuild(build_ext):
-    user_options = build_ext.user_options + [
-        ('library-path=', None, 'oss_connector library path'),
-    ]
-    def initialize_options(self):
-        super().initialize_options()
-        self.library_path = None
+DIST_DIR = "dist/"
+DIST_DIR_TMP = "tmp.dist/"
+ATTEMPT_TIMES = 3
+
+class CustomSDistCommand(_sdist):
     def run(self):
-        if not self.library_path:
-            raise RuntimeError("library path is not specified by '--library-path'")
-        self.library_path = os.path.abspath(self.library_path)
-        if os.path.exists(self.library_path):
-            print('library path:', self.library_path)
+        if os.path.exists(DIST_DIR):
+            if os.listdir(DIST_DIR):
+                raise Exception(
+                    f"The directory '{DIST_DIR}' already exists and is not empty."
+                )
+            else:
+                print(f"Directory '{DIST_DIR}' exists.")
         else:
-            raise RuntimeError("invalid library path: " + self.library_path)
-        for ext in self.extensions:
-            self.build_extension(ext)
+            os.makedirs(DIST_DIR)
+            print(f"Directory '{DIST_DIR}' created successfully.")
 
-    def run_command(self, command, cwd):
-        try:
-            subprocess.run(command, capture_output=True, text=True, check=True, cwd=cwd)
-        except subprocess.CalledProcessError as e:
-            print(f"Command '{' '.join(command)}' failed with exit code {e.returncode}")
-            print(f"Stdout: {e.stdout}")
-            print(f"Stderr: {e.stderr}")
-            raise RuntimeError("Subprocess execution failed") from e
+        os.makedirs(DIST_DIR_TMP, exist_ok=True)
 
-    def build_extension(self, ext):
-        print('name:', ext.name)
-        print('source path:', ext.source_dir)
-        print('current dir:', os.getcwd())
+        # download to tmp
+        for name in WHEELS:
+            url = get_url(name)
+            self.download_whl(name, url, DIST_DIR_TMP)
 
-        # copy .so
-        library_file_name = os.path.basename(self.library_path)
-        dest_so_path = os.path.abspath(
-            os.path.join(self.build_lib, 'osstorchconnector', '_oss_connector', library_file_name))
-        print('copy %s to %s' % (self.library_path, dest_so_path))
-        shutil.copy(self.library_path, dest_so_path)
+        # move whl from tmp to dist
+        for name in WHEELS:
+            source_file = os.path.join(DIST_DIR_TMP, name)
+            destination_file = os.path.join(DIST_DIR, name)
+
+            if os.path.isfile(source_file) and name.endswith(".whl"):
+                shutil.move(source_file, destination_file)
+                print(f"Moved: {source_file} -> {destination_file}")
+
+    def download_whl(self, whl_name, url, dir):
+        attempt = 0
+        file_path = os.path.join(dir, whl_name)
+        while attempt < ATTEMPT_TIMES:
+            attempt += 1
+            try:
+                with urllib.request.urlopen(url) as response:
+                    if response.status == 200:
+                        with open(file_path, "wb") as file:
+                            file.write(response.read())
+
+                        print("Whl downloaded and saved as %s" % file_path)
+                        return
+                    else:
+                        print(
+                            "Whl %s download failed and try %d times. Response.status: %d"
+                            % (file_path, attempt, response.status_code)
+                        )
+            except Exception as e:
+                print(
+                    "Whl %s download failed and try %d times. Exception: %s"
+                    % (file_path, attempt, e)
+                )
+            finally:
+                time.sleep(2)
+        if attempt >= ATTEMPT_TIMES:
+            # print("Max retries reached. %s download failed." % whl_name)
+            raise Exception("Max retries reached. %s download failed." % whl_name)
 
 
-setup(
-    ext_modules=[BuildExtension('oss_connector', '.')],
-    cmdclass=dict(build_ext=LibraryBuild),
-)
+class UndefinedBDistWheelCommand(_bdist_wheel):
+    def run(self):
+        raise Exception(
+            "bdist_wheel is undefined as it is overriden by UndefinedBDistWheelCommand"
+        )
+
+
+setup(cmdclass={"sdist": CustomSDistCommand, "bdist_wheel": UndefinedBDistWheelCommand})
+
