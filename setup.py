@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 from setuptools.command.sdist import sdist as _sdist
-from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 import os
 import time
 import urllib.request
