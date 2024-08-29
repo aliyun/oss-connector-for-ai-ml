@@ -91,4 +91,3 @@ class UndefinedBDistWheelCommand(_bdist_wheel):
 
 
 setup(cmdclass={"sdist": CustomSDistCommand, "bdist_wheel": UndefinedBDistWheelCommand})
-
