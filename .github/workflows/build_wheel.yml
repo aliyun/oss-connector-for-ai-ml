@@ -35,7 +35,7 @@ jobs:
         PYTHON_VERSION=${{ matrix.python }}
         PYTHON_VERSION=${PYTHON_VERSION//./}
         echo "PYTHON_VERSION=${PYTHON_VERSION}"
-        BUILD_IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}/connector_builder:base"
+        BUILD_IMAGE="quay.io/pypa/manylinux2014_x86_64:2024-03-10-4935fcc"
         echo "BUILD_IMAGE=${BUILD_IMAGE}"
         RELEASE_IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}/connector_builder:${RELEASE_VERSION}"
         echo "RELEASE_IMAGE=${RELEASE_IMAGE}"
