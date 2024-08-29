@@ -5,27 +5,27 @@ TAG_VER_LIST = [
     {
         "py": "cp38",
         "abi": "cp38",
-        "platform": "linux_x86_64",
+        "platform": "manylinux",
     },
     {
         "py": "cp39",
         "abi": "cp39",
-        "platform": "linux_x86_64",
+        "platform": "manylinux",
     },
     {
         "py": "cp310",
         "abi": "cp310",
-        "platform": "linux_x86_64",
+        "platform": "manylinux",
     },
     {
         "py": "cp311",
         "abi": "cp311",
-        "platform": "linux_x86_64",
+        "platform": "manylinux",
     },
     {
         "py": "cp312",
         "abi": "cp312",
-        "platform": "linux_x86_64",
+        "platform": "manylinux",
     },
 ]
 
