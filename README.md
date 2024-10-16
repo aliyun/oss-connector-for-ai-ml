@@ -95,6 +95,7 @@ for item in iterable_dataset:
     print(item.size)
     content = item.read()
     print(len(content))
+    item.close()
 
 
 # 2) from_objects
@@ -110,6 +111,7 @@ for item in iterable_dataset:
     print(item.size)
     content = item.read()
     print(len(content))
+    item.close()
 ```
 
 ### MapDataset
@@ -130,6 +132,14 @@ print(item.key)
 content = item.read()
 print(item.size)
 print(len(content))
+item.close()
+
+# or
+with map_dataset[5] as item:
+    print(item.key)
+    content = item.read()
+    print(item.size)
+    print(len(content))
 
 # iterable
 for item in map_dataset:
@@ -137,6 +147,7 @@ for item in map_dataset:
     print(item.size)
     content = item.read()
     print(len(content))
+    item.close()
 
 
 # 2) from_objects
@@ -153,6 +164,7 @@ print(item.key)
 print(item.size)
 content = item.read()
 print(len(content))
+item.close()
 
 # iterable
 for item in map_dataset:
@@ -160,6 +172,7 @@ for item in map_dataset:
     print(item.size)
     content = item.read()
     print(len(content))
+    item.close()
 ```
 
 Please note that OssMapDataset performs an OSS list objects operation under the given prefix first (which may take some time).
@@ -220,12 +233,11 @@ for item in iterable_dataset:
     print(item.label)
     content = item.read()
     print(len(content))
+    item.close()
 
 # manifest_file on oss
 iterable_dataset = OssIterableDataset.from_manifest_file("oss://ossconnectorbucket/manifest_file/EnglistImg/manifest_file", manifest_parser, "oss://ossconnectorbucket/EnglistImg/", endpoint=ENDPOINT, cred_path=CRED_PATH, config_path=CONFIG_PATH)
 ```
-
-
 
 ### Dataset and transform
 
@@ -334,7 +346,7 @@ with checkpoint.writer(CHECKPOINT_WRITE_URI) as writer:
    torch.save(state_dict, writer)
 ```
 
-## Releted
+## Related
 
 [OSS Connector for AI/ML 中文文档](https://help.aliyun.com/zh/oss/developer-reference/oss-connector-for-ai-ml)
 
