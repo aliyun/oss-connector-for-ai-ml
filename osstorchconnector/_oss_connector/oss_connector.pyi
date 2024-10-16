@@ -29,7 +29,7 @@ class DataSet:
     def open_wo(self, bucket: str, key: str) -> DataObject: ...
 
 
-def new_oss_dataset(endpoint: str, cred_path: str, config_paht: str, uuid: str, id: int, total: int) -> DataSet:
+def new_oss_dataset(endpoint: str, cred_path: str, config_path: str, uuid: str, id: int, total: int) -> DataSet:
     ...
 
 
