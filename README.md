@@ -321,7 +321,10 @@ for i, (datas, keys, labels) in enumerate(loader):
     print(keys)
 ```
 
-OssIterableDataset includes prefetch optimization. When the DataLoader is configured with multiple workers, the iteration order may not be deterministic (local order might be disrupted).
+When using with DataLoader, the main DataLoader worker responsible for listing from OSS or receiving objects from_prefix/from_manifest_file, all workers obtain their assigned objects from the main worker.
+This approach avoids issues of redundant listing and data reading (which may exist in other connectors), allowing better performance from multiple workers. When testing data download speed (excluding transform and other CPU-bound workload) with a large number of small files (e.g., ImageNet), it can exceed 10GB/s.
+
+OssIterableDataset includes prefetch optimization by increasing concurrency. When the DataLoader is configured with multiple workers, the iteration order may not be deterministic (local order might be disrupted).
 
 ### Checkpoint
 
