@@ -346,6 +346,8 @@ with checkpoint.writer(CHECKPOINT_WRITE_URI) as writer:
    torch.save(state_dict, writer)
 ```
 
+OssCheckpoint can be used for checkpoints, and also for high-speed uploading and downloading of arbitrary objects. In our testing environment, the download speed can exceed 15GB/s.
+
 ## Related
 
 [OSS Connector for AI/ML 中文文档](https://help.aliyun.com/zh/oss/developer-reference/oss-connector-for-ai-ml)
