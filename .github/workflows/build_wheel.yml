@@ -43,7 +43,7 @@ jobs:
         docker buildx build --build-arg BUILD_IMAGE=${BUILD_IMAGE} --build-arg RELEASE_IMAGE=${RELEASE_IMAGE} --build-arg PYTHON_VERSION=${PYTHON_VERSION} -f .github/workflows/build_wheel/Dockerfile -o dist/ .
         ls -l dist/
     - name: Upload
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: dist/osstorchconnector*
@@ -54,7 +54,7 @@ jobs:
     needs: [build]
     steps:
       - name: Download builds and release notes
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
       - name: Display downloaded files
         shell: bash
         run: |
