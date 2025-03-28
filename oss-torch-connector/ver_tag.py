@@ -1,4 +1,6 @@
-RELEASE_VERSION = "1.0.0rc1"
+import urllib.parse
+
+RELEASE_VERSION = "1.1.0"
 
 PACKAGE_NAME = "osstorchconnector"
 TAG_VER_LIST = [
@@ -31,7 +33,9 @@ TAG_VER_LIST = [
 
 UID = "aliyun"
 REPO = "oss-connector-for-ai-ml"
-URL_PREFIX = "https://github.com/%s/%s/releases/download/v%s/" % (UID, REPO, RELEASE_VERSION)
+RELEASE_TAG_SAFE = urllib.parse.quote("%s/v%s" %(PACKAGE_NAME, RELEASE_VERSION), safe='')
+URL_PREFIX = "https://github.com/%s/%s/releases/download/%s/" % (UID, REPO, RELEASE_TAG_SAFE)
 
+# https://github.com/aliyun/oss-connector-for-ai-ml/releases/download/osstorchconnector%2Fv1.1.0/osstorchconnector-1.1.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 def get_url(name: str):
     return URL_PREFIX + name
