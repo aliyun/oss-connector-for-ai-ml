@@ -1,5 +1,5 @@
 import os
-from typing import Iterator, Iterable
+from typing import Iterator, Iterable, Any
 import logging
 
 log = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ _oss_client.py
 """
 
 class OssClient:
-    def __init__(self, endpoint: str, cred_path: str = "", config_path: str = "", uuid: str = "", id: int = 0, total: int = 1):
+    def __init__(self, endpoint: str, cred_path: str = "", config_path: str = "", uuid: str = "", id: int = 0, total: int = 1, cred_provider: Any = None):
         self._endpoint = endpoint
         self._cred_path = cred_path
         self._config_path = config_path
@@ -28,6 +28,7 @@ class OssClient:
         self._client_pid = None
         self._id = id
         self._total = total
+        self._cred_provider = cred_provider
 
     @property
     def _client(self) -> DataSet:
@@ -42,7 +43,7 @@ class OssClient:
 
     def _client_builder(self) -> DataSet:
         log.info("OssClient new_oss_dataset, id %d, total %d", self._id, self._total)
-        return new_oss_dataset(self._endpoint, self._cred_path, self._config_path, str(self._uuid), self._id, self._total)
+        return new_oss_dataset(self._endpoint, self._cred_path, self._cred_provider, self._config_path, str(self._uuid), self._id, self._total)
 
     def get_object(self, bucket: str, key: str, size: int = 0, type: int = 0, label: str = "") -> DataObject:
         return self._client.open_ro(bucket, key, size, type, label)
@@ -65,3 +66,11 @@ class OssClient:
     def list_objects_from_uris_with_preload(self, object_uris: Iterable) -> Iterator[DataObject]:
         log.debug("OssClient list_objects_from_uris_with_preload")
         return self._client.list_from_uris_with_preload(object_uris)
+
+    def list_objects_from_tar(self, bucket: str, tar_key: str, index_key: str, chunks: Iterable = [], sizes: Iterable = [],
+                              prefetch: bool = False, include_errors: bool = False) -> Iterator[DataObject]:
+        log.debug("OssClient list_objects_from_tar")
+        return self._client.list_from_tar(bucket, tar_key, index_key, chunks, sizes, prefetch, include_errors)
+
+    def gen_tar_archive(self, tar_path: str, index_path: str, source_path: str, index_only: bool = False) -> int:
+        return self._client.gen_tar_archive(tar_path, index_path, source_path, index_only)

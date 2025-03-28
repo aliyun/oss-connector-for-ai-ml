@@ -1,6 +1,7 @@
 from ._oss_bucket_iterable import parse_oss_uri
 from ._oss_client import OssClient, DataObject
 from ctypes import *
+from typing import Any
 
 class OssCheckpoint:
     """A checkpoint manager for OSS.
@@ -16,6 +17,7 @@ class OssCheckpoint:
         endpoint: str,
         cred_path: str = "",
         config_path: str = "",
+        cred_provider: Any = None,
     ):
         if not endpoint:
             raise ValueError("endpoint must be non-empty")
@@ -29,7 +31,8 @@ class OssCheckpoint:
             self._config_path = ""
         else:
             self._config_path = config_path
-        self._client = OssClient(self._endpoint, self._cred_path, self._config_path)
+        self._cred_provider = cred_provider
+        self._client = OssClient(self._endpoint, self._cred_path, self._config_path, cred_provider=self._cred_provider)
 
     def reader(self, oss_uri: str):
         """Creates an DataObject from a given oss_uri.

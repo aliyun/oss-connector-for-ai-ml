@@ -7,6 +7,7 @@ name = "osstorchconnector"
 version = "1.0.0rc1"
 description = "OSS connector for AI/ML"
 requires-python = ">=3.8,<3.13"
+readme = "README.md"
 dependencies = [
     "torch >= 2.0",
 ]
