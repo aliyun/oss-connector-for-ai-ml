@@ -3,7 +3,8 @@ name: Build Wheel
 on:
   push:
     tags:
-      - "v*"
+      - "osstorchconnector/v*"
+      - "ossmodelconnector/v*"
 
 jobs:
   build:
@@ -29,24 +30,32 @@ jobs:
     - name: Build
       shell: bash
       run: |
-        RELEASE_VERSION=${{ github.ref }}
-        RELEASE_VERSION="${RELEASE_VERSION#refs/tags/v}"
+        REFS=${{ github.ref }}
+        REFS=${REFS#refs/tags/}
+        PACKAGE_NAME=${REFS%%/*}
+        echo "PACKAGE_NAME=${PACKAGE_NAME}"
+        RELEASE_VERSION="${REFS#*/v}"
         echo "RELEASE_VERSION=${RELEASE_VERSION}"
         PYTHON_VERSION=${{ matrix.python }}
         PYTHON_VERSION=${PYTHON_VERSION//./}
         echo "PYTHON_VERSION=${PYTHON_VERSION}"
-        BUILD_IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}/connector_builder:base"
+        BUILD_IMAGE="quay.io/pypa/manylinux2014_x86_64:2024-03-10-4935fcc"
         echo "BUILD_IMAGE=${BUILD_IMAGE}"
-        RELEASE_IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}/connector_builder:${RELEASE_VERSION}"
+        RELEASE_IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}/connector_builder:${PACKAGE_NAME}-${RELEASE_VERSION}"
         echo "RELEASE_IMAGE=${RELEASE_IMAGE}"
-
-        docker buildx build --build-arg BUILD_IMAGE=${BUILD_IMAGE} --build-arg RELEASE_IMAGE=${RELEASE_IMAGE} --build-arg PYTHON_VERSION=${PYTHON_VERSION} -f .github/workflows/build_wheel/Dockerfile -o dist/ .
+        if [[ "${PACKAGE_NAME}" == "osstorchconnector" ]]; then
+          PACKAGE_DIR="oss-torch-connector"
+        elif [[ "${PACKAGE_NAME}" == "ossmodelconnector" ]]; then
+          PACKAGE_DIR="oss-model-connector"
+        fi
+        sed -i -e "s/version.*/version = \"${RELEASE_VERSION}\"/g" ${PACKAGE_DIR}/pyproject.toml
+        docker buildx build --build-arg BUILD_IMAGE=${BUILD_IMAGE} --build-arg RELEASE_IMAGE=${RELEASE_IMAGE} --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PACKAGE_DIR=${PACKAGE_DIR} -f .github/workflows/build_wheel/Dockerfile -o dist/ .
         ls -l dist/
     - name: Upload
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: dist
-        path: dist/osstorchconnector*
+        name: dist-${{ strategy.job-index }}
+        path: dist/oss*
 
   release:
     name: "Tagged Release"
@@ -54,18 +63,22 @@ jobs:
     needs: [build]
     steps:
       - name: Download builds and release notes
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          merge-multiple: true
+          path: dist
       - name: Display downloaded files
         shell: bash
         run: |
           ls -l dist
-          releasever=${{ github.ref }}
-          releasever="${releasever#refs/tags/}"
-          echo "RELEASE_VERSION=${releasever}" >> $GITHUB_ENV
+          REFS=${{ github.ref }}
+          REFS=${REFS#refs/tags/}
+          echo "RELEASE_TAG=${REFS}" >> $GITHUB_ENV
       - name: Create Release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "${{ env.RELEASE_VERSION }}"
+          automatic_release_tag: "${{ env.RELEASE_TAG }}"
           prerelease: false
-          files: dist/osstorchconnector*
+          files: dist/oss*

@@ -1,9 +1,5 @@
 # OSS Connector for AI/ML
 
-[ossconnector.github.io](https://ossconnector.github.io/)
-
-## Overview
-
 OSS Connector for AI/ML contains some high-performance Python libraries specifically designed for AI and ML scenariosis, tailored to work with [Alibaba Cloud OSS (Object Storage Service)](https://www.alibabacloud.com/en/product/object-storage-service).
 
 Currently, the OSS connector is composed of two libraries: OSS Model Connector and OSS Torch Connector.
@@ -14,13 +10,7 @@ Currently, the OSS connector is composed of two libraries: OSS Model Connector a
 
 The core component of the OSS Connector for AI/ML is implemented in C++ using [PhotonLibOS](https://github.com/alibaba/PhotonLibOS) and is provided as dynamic link libraries within wheel packages. This repository only contains the code of Python.
 
-For details, please refer to [ossconnector.github.io](https://ossconnector.github.io/) or [aliyun.github.io/oss-connector-for-ai-ml](https://aliyun.github.io/oss-connector-for-ai-ml).
-
-
-## Related
-
-[OSS Connector for AI/ML 中文文档](https://help.aliyun.com/zh/oss/developer-reference/oss-connector-for-ai-ml)
 
 ## License
 
-This project is licensed under the terms of the [MIT License](LICENSE).
+This project is licensed under the terms of the [MIT License](LICENSE.md).
