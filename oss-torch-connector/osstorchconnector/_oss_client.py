@@ -31,7 +31,7 @@ class OssClient:
         cred_provider: Any = None,
         region: str = "",
     ):
-        self._endpoint = endpoint
+        self._endpoint = endpoint if endpoint else ""
         self._cred_path = cred_path
         self._config_path = config_path
         self._uuid = uuid

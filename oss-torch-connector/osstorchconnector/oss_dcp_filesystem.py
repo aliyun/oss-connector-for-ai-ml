@@ -43,7 +43,7 @@ class OssStorageWriter(FileSystemWriter):
 
     @classmethod
     def validate_checkpoint_id(cls, checkpoint_id: Union[str, os.PathLike]) -> bool:
-        return OssFileSystem.validate_checkpoint_id(checkpoint_id)
+        return OssDCPFileSystem.validate_checkpoint_id(checkpoint_id)
 
 class OssStorageReader(FileSystemReader):
     def __init__(
@@ -68,9 +68,9 @@ class OssStorageReader(FileSystemReader):
 
     @classmethod
     def validate_checkpoint_id(cls, checkpoint_id: Union[str, os.PathLike]) -> bool:
-        return OssFileSystem.validate_checkpoint_id(checkpoint_id)
+        return OssDCPFileSystem.validate_checkpoint_id(checkpoint_id)
 
-class OssFileSystem(FileSystemBase):
+class OssDCPFileSystem(FileSystemBase):
     def __init__(
         self,
         endpoint: str,
@@ -80,7 +80,8 @@ class OssFileSystem(FileSystemBase):
         region: str = "",
     ):
         """
-        Initialize an OSS FileSystem for distributed checkpointing.
+        Initialize an FileSystem for distributed checkpointing.
+        OssDCPFileSystem is intended for DCP only and is not a full-featured FileSystem.
 
         Args:
             endpoint (str): Endpoint of the OSS bucket where the objects are stored.
