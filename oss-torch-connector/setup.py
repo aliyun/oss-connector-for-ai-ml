@@ -5,6 +5,7 @@ import os
 import time
 import urllib.request
 import shutil
+import zipfile
 from ver_tag import RELEASE_VERSION, PACKAGE_NAME, TAG_VER_LIST, get_url
 
 
@@ -64,12 +65,29 @@ class CustomSDistCommand(_sdist):
                         with open(file_path, "wb") as file:
                             file.write(response.read())
 
-                        print("Whl downloaded and saved as %s" % file_path)
+                        # ====================================================
+                        file_size = os.path.getsize(file_path)
+                        print(f"[{whl_name}] Downloaded size: {file_size} bytes.")
+                        
+                        if file_size < 2048:  # 小于 2KB 极度可疑
+                            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                                head_content = f.read(100)
+                            print(f"!!! WARNING: File is too small. Head content: {head_content}")
+
+                        # 照妖镜 2：验证它是不是真正的 ZIP 压缩包
+                        if not zipfile.is_zipfile(file_path):
+                            raise Exception(
+                                f"FATAL ERROR: The downloaded file is NOT a valid WHL/ZIP file! "
+                                f"It is likely an HTML/XML error page. URL: {url}"
+                            )
+                        # ====================================================
+
+                        print("Whl downloaded, verified, and saved as %s" % file_path)
                         return
                     else:
                         print(
                             "Whl %s download failed and try %d times. Response.status: %d"
-                            % (file_path, attempt, response.status_code)
+                            % (file_path, attempt, response.status)
                         )
             except Exception as e:
                 print(
@@ -78,8 +96,8 @@ class CustomSDistCommand(_sdist):
                 )
             finally:
                 time.sleep(2)
+                
         if attempt >= ATTEMPT_TIMES:
-            # print("Max retries reached. %s download failed." % whl_name)
             raise Exception("Max retries reached. %s download failed." % whl_name)
 
 
