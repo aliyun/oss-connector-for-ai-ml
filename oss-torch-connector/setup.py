@@ -85,9 +85,12 @@ class CustomSDistCommand(_sdist):
 
 class UndefinedBDistWheelCommand(_bdist_wheel):
     def run(self):
-        raise Exception(
-            "bdist_wheel is undefined as it is overriden by UndefinedBDistWheelCommand"
-        )
+        print("****************************************************************")
+        print("Bypassing bdist_wheel build.")
+        print("Pre-compiled wheels have already been downloaded in sdist phase.")
+        print("****************************************************************")
+        
+        pass
 
 
 setup(cmdclass={"sdist": CustomSDistCommand, "bdist_wheel": UndefinedBDistWheelCommand})
