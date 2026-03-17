@@ -12,7 +12,7 @@ ARG PYTHON_VERSION
 ENV PY_VER=${PYTHON_VERSION}
 ENV PY_ABI_TAG=cp${PY_VER}-cp${PY_VER}
 RUN export PATH="/opt/python/${PY_ABI_TAG}/bin:$PATH" && \
-    python3 -V && pip install setuptools && \
+    python3 -V && pip install "setuptools>=70,<74" && \
     libconnector=$(find . -type f -name "oss_*.cpython-${PY_VER}-x86_64-linux-gnu.so") && \
     chmod +x ${libconnector} && \
     echo -e "[build_ext]\nlibrary_path=${libconnector}" > setup.cfg && \
