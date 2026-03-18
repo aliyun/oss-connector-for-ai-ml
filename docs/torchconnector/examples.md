@@ -282,10 +282,11 @@ OSS connector for AI/ML supports [PyTorch distributed checkpoints(DCP)](https://
 ```py
 import torchvision
 import torch.distributed.checkpoint as DCP
-from osstorchconnector import OssFileSystem
+from osstorchconnector import OssDCPFileSystem
 import torch
 
 ENDPOINT = "http://oss-cn-beijing-internal.aliyuncs.com"
+REGION = "cn-beijing"
 CONFIG_PATH = "/etc/oss-connector/config.json"
 CRED_PATH = "/root/.alibabacloud/credentials"
 OSS_URI = "oss://ossconnectorbucket/dcp-checkpoint-resnet18"
@@ -293,7 +294,7 @@ OSS_URI = "oss://ossconnectorbucket/dcp-checkpoint-resnet18"
 model = torchvision.models.resnet18()
 
 # write to OSS
-fs = OssFileSystem(endpoint=ENDPOINT, cred_path=CRED_PATH, config_path=CONFIG_PATH)
+fs = OssDCPFileSystem(endpoint=ENDPOINT, cred_path=CRED_PATH, config_path=CONFIG_PATH, region=REGION)
 oss_storage_writer = fs.writer(OSS_URI)
 # DCP.save or DCP.async_save
 checkpoint_future = DCP.async_save(
@@ -324,11 +325,12 @@ import torch
 from osstorchconnector import OssSafetensor
 
 ENDPOINT = "http://oss-cn-beijing-internal.aliyuncs.com"
+REGION = "cn-beijing"
 CONFIG_PATH = "/etc/oss-connector/config.json"
 CRED_PATH = "/root/.alibabacloud/credentials"
 OSS_URI = "oss://ossconnectorbucket/safetensors/model.safetensors"
 
-sfts = OssSafetensor(endpoint=HTTPS_ENDPOINT, cred_path=CRED_PATH, config_path=CONFIG_PATH)
+sfts = OssSafetensor(endpoint=ENDPOINT, cred_path=CRED_PATH, config_path=CONFIG_PATH, region=REGION)
 
 # save tensors to safetensor file on OSS
 tensors = {"embedding": torch.rand((512, 1024)), "attention": torch.rand((256, 256))}
