@@ -316,6 +316,225 @@ DCP.load(
 
 ```
 
+## YOLO
+
+OSS connector for AI/ML provides integration with popular YOLO frameworks for training object detection models directly from OSS storage.
+
+### Training with Ultralytics
+
+OSS connector for AI/ML provides integration with [Ultralytics](https://docs.ultralytics.com/) framework for training YOLO models directly from OSS storage.
+
+#### Dataset Configuration
+
+A YAML (Yet Another Markup Language) file is used to define the dataset configuration. It contains information about the dataset's paths, classes, and other relevant information. Two formats are supported:
+
+**Format 1: Directory-based**
+
+In this format, `train` and `val` specify directory prefixes containing the images. The connector will list all objects under these prefixes.
+
+```yaml
+path: oss://ossconnectorbucket/COCO_YOLO
+train: images/train2017
+val:   images/val2017
+
+nc: 80
+
+names:
+  0:  person
+  1:  bicycle
+  2:  car
+  # ... (class names continue)
+```
+
+**Expected OSS object layout:**
+```
+<bucket>/<base_key>/
+  images/
+    train2017/     ← ~118k images
+    val2017/       ← 5k images
+  labels/
+    train2017/     ← YOLO .txt annotations
+    val2017/
+```
+
+**Label path rule:** Images in `images/train2017/x.jpg` will automatically resolve to labels in `labels/train2017/x.txt`.
+
+**Format 2: Manifest file-based**
+
+In this format, `train` and `val` specify manifest files containing lists of image paths. This format is suitable for datasets with a large number of objects and repeated dataset loading, as it avoids the overhead of listing objects in OSS.
+
+```yaml
+path: oss://ossconnectorbucket/COCO_YOLO
+train: images/train2017.txt
+val:   images/val2017.txt
+
+nc: 80
+
+names:
+  0:  person
+  1:  bicycle
+  2:  car
+  # ... (class names continue)
+```
+
+**Manifest file format (`train2017.txt`):**
+```
+/bucket/COCO_YOLO/images/train2017/image001.jpg
+/bucket/COCO_YOLO/images/train2017/image002.jpg
+/bucket/COCO_YOLO/images/train2017/image003.jpg
+```
+
+Each line in the manifest file is a `/bucket/key` path. Lines starting with `/` are used as-is; other lines are joined with the manifest's directory prefix.
+
+#### Training Example
+
+```py
+from ultralytics import YOLO
+from osstorchconnector import make_oss_trainer
+
+
+ENDPOINT = "http://oss-cn-beijing-internal.aliyuncs.com"
+REGION = "cn-beijing"
+CONFIG_PATH = "/etc/oss-connector/config.json"
+CRED_PATH = "/root/.alibabacloud/credentials"
+OSS_DATA = "coco_oss.yaml"
+
+
+custom_trainer = make_oss_trainer(
+    endpoint=ENDPOINT,
+    cred_path=CRED_PATH,
+    config_path=CONFIG_PATH,
+)
+
+# Load model
+model = YOLO("yolo26n.pt")
+
+# Train the model
+results = model.train(
+    trainer=custom_trainer,
+    data=OSS_DATA,
+    epochs=1, batch=16, imgsz=640, fraction=0.005)
+```
+
+The `make_oss_trainer` function creates a custom trainer that enables Ultralytics to read training data directly from OSS. The trainer handles:
+- Resolving OSS URIs from the YAML configuration
+- Reading images and labels from OSS storage
+- Supporting both directory-based and manifest file-based dataset configurations
+
+### Training with MMDetection
+
+OSS connector for AI/ML provides integration with [MMDetection](https://github.com/open-mmlab/mmdetection) framework for training object detection models directly from OSS storage.
+
+#### Dataset Configuration
+
+MMDetection uses COCO-format JSON annotation files. The dataset configuration is specified programmatically when building the MMEngine config, rather than through a YAML file.
+
+**Expected OSS object layout for COCO dataset:**
+```
+<bucket>/COCO/
+  annotations/
+    instances_train2017.json
+    instances_val2017.json
+  train2017/     ← training images
+  val2017/       ← validation images
+```
+
+#### Training Example
+
+```py
+import os
+from mmengine.runner import Runner
+from mmengine.config import Config
+
+# Import osstorchconnector — registers OSSDetDataset + OSSLoadImageFromFile
+from osstorchconnector import OSSDetDataset, OSSLoadImageFromFile, get_oss_ann_path
+
+
+ENDPOINT = "http://oss-cn-beijing-internal.aliyuncs.com"
+REGION = "cn-beijing"
+CONFIG_PATH = "/etc/oss-connector/config.json"
+CRED_PATH = "/root/.alibabacloud/credentials"
+
+OSS_DATA_ROOT    = 'oss://ossconnectorbucket/COCO'
+OSS_TRAIN_ANN    = 'annotations/instances_train2017.json'
+OSS_VAL_ANN      = 'annotations/instances_val2017.json'
+OSS_TRAIN_PREFIX = 'train2017/'
+OSS_VAL_PREFIX   = 'val2017/'
+OSS_WORK_DIR     = './work_dirs/mmdet_oss'
+
+MAX_EPOCHS   = 1
+BATCH_SIZE   = 16
+NUM_WORKERS  = 8
+
+# Load MMDetection config
+cfg = Config.fromfile('rtmdet_tiny_8xb32-300e_coco.py')
+
+# Patch image loader: LoadImageFromFile → OSSLoadImageFromFile
+def _patch_oss_pipeline(pipeline):
+    out = []
+    for t in pipeline:
+        t = dict(t)
+        if t.get("type") in ("LoadImageFromFile", "mmdet.LoadImageFromFile"):
+            t = dict(type="OSSLoadImageFromFile")
+        out.append(t)
+    return out
+
+cfg.train_dataloader.dataset.pipeline = _patch_oss_pipeline(
+    cfg.train_dataloader.dataset.pipeline)
+cfg.val_dataloader.dataset.pipeline = _patch_oss_pipeline(
+    cfg.val_dataloader.dataset.pipeline)
+
+# Replace dataset type and OSS connection params
+cfg.merge_from_dict({
+    "train_dataloader.dataset.type":             "OSSDetDataset",
+    "train_dataloader.dataset.data_root":        OSS_DATA_ROOT,
+    "train_dataloader.dataset.ann_file":         OSS_TRAIN_ANN,
+    "train_dataloader.dataset.data_prefix":      dict(img=OSS_TRAIN_PREFIX),
+    "train_dataloader.dataset.oss_endpoint":     ENDPOINT,
+    "train_dataloader.dataset.oss_cred_path":    CRED_PATH,
+    "train_dataloader.dataset.oss_config_path":  CONFIG_PATH,
+    "train_dataloader.dataset.oss_region":       REGION,
+    "val_dataloader.dataset.type":               "OSSDetDataset",
+    "val_dataloader.dataset.data_root":          OSS_DATA_ROOT,
+    "val_dataloader.dataset.ann_file":           OSS_VAL_ANN,
+    "val_dataloader.dataset.data_prefix":        dict(img=OSS_VAL_PREFIX),
+    "val_dataloader.dataset.oss_endpoint":       ENDPOINT,
+    "val_dataloader.dataset.oss_cred_path":      CRED_PATH,
+    "val_dataloader.dataset.oss_config_path":    CONFIG_PATH,
+    "val_dataloader.dataset.oss_region":         REGION,
+})
+
+# ann_cache_dir: downloaded annotation JSONs live inside work_dir/ann_cache/
+ann_cache_dir = os.path.join(OSS_WORK_DIR, "ann_cache")
+cfg.merge_from_dict({
+    'train_dataloader.dataset.ann_cache_dir': ann_cache_dir,
+    'val_dataloader.dataset.ann_cache_dir':   ann_cache_dir,
+})
+
+# CocoMetric: point at the local cache of the downloaded OSS annotation
+_, _, _val_local_ann = get_oss_ann_path(OSS_DATA_ROOT, OSS_VAL_ANN, ann_cache_dir)
+cfg.val_evaluator.ann_file = _val_local_ann
+cfg.test_evaluator.ann_file = _val_local_ann
+
+# Training config overrides
+cfg.max_epochs = MAX_EPOCHS
+cfg.train_cfg.max_epochs = MAX_EPOCHS
+cfg.train_dataloader.batch_size = BATCH_SIZE
+cfg.train_dataloader.num_workers = NUM_WORKERS
+cfg.val_dataloader.batch_size = 1
+cfg.val_dataloader.num_workers = NUM_WORKERS
+cfg.work_dir = OSS_WORK_DIR
+
+# Train
+runner = Runner.from_cfg(cfg)
+runner.train()
+```
+
+The MMDetection integration provides:
+- `OSSDetDataset`: A custom dataset class that reads COCO-format annotations and images from OSS
+- `OSSLoadImageFromFile`: A data pipeline transform that loads images directly from OSS storage
+- `get_oss_ann_path`: A helper function to manage local caching of annotation files
+
 ## Safetensor
 
 OSS connector for AI/ML supports saving/loading safetensors since v1.2.0rc6.
