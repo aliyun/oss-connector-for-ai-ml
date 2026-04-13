@@ -30,7 +30,7 @@ classifiers = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["osstorchconnector", "osstorchconnector._oss_connector"]
+include = ["osstorchconnector", "osstorchconnector._oss_connector", "osstorchconnector.integrations"]
 
 [tool.setuptools.package-data]
 osstorchconnector = ["_oss_connector/*.so"]
