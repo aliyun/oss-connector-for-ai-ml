@@ -1,0 +1,22 @@
+# Java
+target/
+*.class
+dependency-reduced-pom.xml
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+build/
+dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Env
+*.env
+!*.env.example

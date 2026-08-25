@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "percent_encoder": [
+    {
+      "input": "a b",
+      "expected": "a%20b"
+    },
+    {
+      "input": "-._~AZaz09",
+      "expected": "-._~AZaz09"
+    },
+    {
+      "input": "my_db$my_table",
+      "expected": "my_db%24my_table"
+    },
+    {
+      "input": "a/b",
+      "expected": "a%2Fb"
+    },
+    {
+      "input": "caf\u00e9",
+      "expected": "caf%C3%A9"
+    }
+  ],
+  "canonical_uri": [
+    {
+      "raw_path": "/lance/v1/table/my_db%24my_table/describe",
+      "double_uri_encode": true,
+      "expected": "/lance/v1/table/my_db%2524my_table/describe"
+    },
+    {
+      "raw_path": "/lance/v1/table/my_db%24my_table/describe",
+      "double_uri_encode": false,
+      "expected": "/lance/v1/table/my_db%24my_table/describe"
+    },
+    {
+      "raw_path": "",
+      "double_uri_encode": true,
+      "expected": "/"
+    }
+  ],
+  "canonical_query": [
+    {
+      "raw_query": "b=2&a=1&a=0&c=a b",
+      "expected": "a=0&a=1&b=2&c=a%20b"
+    },
+    {
+      "raw_query": "delimiter=%24",
+      "expected": "delimiter=%24"
+    },
+    {
+      "raw_query": "delimiter=%24&mode=create",
+      "expected": "delimiter=%24&mode=create"
+    },
+    {
+      "raw_query": "",
+      "expected": ""
+    }
+  ],
+  "host_header": [
+    {
+      "url": "https://my-bucket.cn-example-internal.oss-tables.aliyuncs.com/lance",
+      "expected": "my-bucket.cn-example-internal.oss-tables.aliyuncs.com"
+    },
+    {
+      "url": "https://example.com:443/x",
+      "expected": "example.com"
+    },
+    {
+      "url": "http://example.com:80/x",
+      "expected": "example.com"
+    },
+    {
+      "url": "http://127.0.0.1:8080/x",
+      "expected": "127.0.0.1:8080"
+    }
+  ],
+  "signing_key": [
+    {
+      "secret_access_key": "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY",
+      "datestamp": "20150830",
+      "region": "us-east-1",
+      "service": "iam",
+      "expected_hex": "c4afb1cc5771d871763a393e44b703571b55cc28424d1a5e86da6ed3c154a4b9"
+    }
+  ],
+  "signature": [
+    {
+      "name": "describe_get",
+      "region": "cn-hangzhou",
+      "service": "osstables",
+      "access_key_id": "test-ak",
+      "secret_access_key": "test-sk",
+      "session_token": null,
+      "amz_date": "20260728T010203Z",
+      "method": "GET",
+      "url": "https://my-bucket.cn-example-internal.oss-tables.aliyuncs.com/lance/v1/table/my_db%24my_table/describe?delimiter=%24",
+      "content_type": "application/json",
+      "double_uri_encode": true,
+      "payload_hex": "",
+      "expected_signature": "b590ac09775730aa09059fe89e4b25fb5c412c3f791b6efcce5baa8e7f0ee585",
+      "expected_authorization": "AWS4-HMAC-SHA256 Credential=test-ak/20260728/cn-hangzhou/osstables/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date, Signature=b590ac09775730aa09059fe89e4b25fb5c412c3f791b6efcce5baa8e7f0ee585"
+    },
+    {
+      "name": "describe_post_json",
+      "region": "cn-hangzhou",
+      "service": "osstables",
+      "access_key_id": "test-ak",
+      "secret_access_key": "test-sk",
+      "session_token": null,
+      "amz_date": "20260728T010203Z",
+      "method": "POST",
+      "url": "https://my-bucket.cn-example-internal.oss-tables.aliyuncs.com/lance/v1/table/my_db%24my_table/describe?delimiter=%24",
+      "content_type": "application/json",
+      "double_uri_encode": true,
+      "payload_hex": "7b226964223a5b226d795f6462222c226d795f7461626c65225d7d",
+      "expected_signature": "e5a6a7e424780616e6586f124123b1734fdb4548fa69161f53c5f5fa0cbe7ce8",
+      "expected_authorization": "AWS4-HMAC-SHA256 Credential=test-ak/20260728/cn-hangzhou/osstables/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date, Signature=e5a6a7e424780616e6586f124123b1734fdb4548fa69161f53c5f5fa0cbe7ce8"
+    },
+    {
+      "name": "describe_post_session_token",
+      "region": "cn-hangzhou",
+      "service": "osstables",
+      "access_key_id": "test-ak",
+      "secret_access_key": "test-sk",
+      "session_token": "sts-token",
+      "amz_date": "20260728T010203Z",
+      "method": "POST",
+      "url": "https://my-bucket.cn-example-internal.oss-tables.aliyuncs.com/lance/v1/table/my_db%24my_table/describe?delimiter=%24",
+      "content_type": "application/json",
+      "double_uri_encode": true,
+      "payload_hex": "7b7d",
+      "expected_signature": "ef90d94206e46b2b3a7fc436da5abc617a6db6c3ba6434c3717083803d2dbbba",
+      "expected_authorization": "AWS4-HMAC-SHA256 Credential=test-ak/20260728/cn-hangzhou/osstables/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date;x-amz-security-token, Signature=ef90d94206e46b2b3a7fc436da5abc617a6db6c3ba6434c3717083803d2dbbba"
+    },
+    {
+      "name": "create_table_arrow_ipc",
+      "region": "cn-hangzhou",
+      "service": "osstables",
+      "access_key_id": "test-ak",
+      "secret_access_key": "test-sk",
+      "session_token": null,
+      "amz_date": "20260728T010203Z",
+      "method": "POST",
+      "url": "https://my-bucket.cn-example-internal.oss-tables.aliyuncs.com/lance/v1/table/my_db%24t2/create?delimiter=%24&mode=create",
+      "content_type": "application/vnd.apache.arrow.stream",
+      "double_uri_encode": true,
+      "payload_hex": "4152524f57310000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+      "expected_signature": "f1cd40b68022b3abf6ec499653a6fed6b708656d13385684f499a17c50291674",
+      "expected_authorization": "AWS4-HMAC-SHA256 Credential=test-ak/20260728/cn-hangzhou/osstables/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date, Signature=f1cd40b68022b3abf6ec499653a6fed6b708656d13385684f499a17c50291674"
+    },
+    {
+      "name": "single_uri_encode",
+      "region": "cn-beijing",
+      "service": "osstables",
+      "access_key_id": "test-ak",
+      "secret_access_key": "test-sk",
+      "session_token": null,
+      "amz_date": "20260728T010203Z",
+      "method": "GET",
+      "url": "https://my-bucket.cn-example-internal.oss-tables.aliyuncs.com/lance/v1/table/my_db%24my_table/describe?delimiter=%24",
+      "content_type": "application/json",
+      "double_uri_encode": false,
+      "payload_hex": "",
+      "expected_signature": "a2cab1128b4811674a6935ad8c4c1327acedac493407e20a91b3dfb8d280cb71",
+      "expected_authorization": "AWS4-HMAC-SHA256 Credential=test-ak/20260728/cn-beijing/osstables/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date, Signature=a2cab1128b4811674a6935ad8c4c1327acedac493407e20a91b3dfb8d280cb71"
+    }
+  ]
+}
