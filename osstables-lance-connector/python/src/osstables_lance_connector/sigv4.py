@@ -61,6 +61,13 @@ class Credentials:
     secret_access_key: str
     session_token: Optional[str] = None
 
+    def __repr__(self) -> str:
+        return (
+            f"Credentials(access_key_id={self.access_key_id!r}, "
+            "secret_access_key=***, "
+            f"session_token={'***' if self.session_token else None})"
+        )
+
 
 def resolve_credentials(properties: Dict[str, str]) -> Credentials:
     """Resolve credentials from explicit properties, then environment variables.

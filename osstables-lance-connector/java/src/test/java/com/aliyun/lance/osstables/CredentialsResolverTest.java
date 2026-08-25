@@ -1,7 +1,9 @@
 package com.aliyun.lance.osstables;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -72,5 +74,18 @@ class CredentialsResolverTest {
     assertThrows(
         InvalidInputException.class,
         () -> CredentialsResolver.resolve(new HashMap<>(), EMPTY_ENV));
+  }
+
+  @Test
+  void toStringRedactsSecretAndToken() {
+    String text = new Credentials("ak", "super-secret", "super-token").toString();
+    assertFalse(text.contains("super-secret"));
+    assertFalse(text.contains("super-token"));
+    assertTrue(text.contains("ak"));
+  }
+
+  @Test
+  void toStringMarksAbsentTokenAsNull() {
+    assertTrue(new Credentials("ak", "sk", null).toString().contains("sessionToken=null"));
   }
 }

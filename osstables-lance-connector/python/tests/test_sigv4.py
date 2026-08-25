@@ -323,3 +323,14 @@ class TestResolveCredentials:
     def test_missing(self):
         with pytest.raises(ValueError):
             resolve_credentials({})
+
+
+class TestCredentialsRedaction:
+    def test_repr_hides_secret_and_token(self):
+        text = repr(Credentials("ak", "super-secret", "super-token"))
+        assert "super-secret" not in text
+        assert "super-token" not in text
+        assert "ak" in text
+
+    def test_repr_marks_absent_token_as_none(self):
+        assert "session_token=None" in repr(Credentials("ak", "sk", None))
