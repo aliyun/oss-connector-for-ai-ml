@@ -34,7 +34,7 @@ pip install pylance
 <dependency>
     <groupId>com.aliyun.osstables</groupId>
     <artifactId>osstables-lance-connector</artifactId>
-    <version>1.0.0-rc1</version>
+    <version>1.0.0-rc2</version>
 </dependency>
 ```
 

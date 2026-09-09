@@ -6,7 +6,7 @@
 
     <groupId>com.aliyun.osstables</groupId>
     <artifactId>osstables-lance-connector</artifactId>
-    <version>1.0.0-rc1</version>
+    <version>1.0.0-rc2</version>
     <packaging>jar</packaging>
 
     <name>OssTables Lance Connector</name>
@@ -23,6 +23,9 @@
 
     <developers>
         <developer>
+            <id>aliyunproducts</id>
+            <name>Aliyun SDK</name>
+            <email>aliyunsdk@aliyun.com</email>
             <organization>Alibaba Cloud</organization>
             <organizationUrl>https://www.alibabacloud.com</organizationUrl>
         </developer>
@@ -47,7 +50,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>8</maven.compiler.release>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
         <lance.namespace.version>0.8.6</lance.namespace.version>
         <arrow.version>15.0.0</arrow.version>
         <junit.version>5.10.2</junit.version>
@@ -92,19 +96,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.11.2</version>
                 <configuration>
@@ -113,14 +104,6 @@
                     <quiet>true</quiet>
                     <detectJavaApiLink>false</detectJavaApiLink>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

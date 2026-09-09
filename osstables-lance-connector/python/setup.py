@@ -34,7 +34,7 @@ requires = [
 ]
 
 setup(
-    name="osstables-lance-connector",
+    name=PACKAGE,
     version=read_version(),
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,

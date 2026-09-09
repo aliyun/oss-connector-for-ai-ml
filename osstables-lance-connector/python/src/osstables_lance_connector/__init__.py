@@ -13,7 +13,7 @@ from lance_namespace import register_namespace_impl
 from .namespace import OssTablesNamespace
 from .sigv4 import Credentials, SigV4ApiClient, SigV4Signer, resolve_credentials
 
-__version__ = "1.0.0rc1"
+__version__ = "1.0.0rc2"
 
 __all__ = [
     "OssTablesNamespace",
