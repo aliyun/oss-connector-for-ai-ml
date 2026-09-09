@@ -4,9 +4,9 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.aliyun.lance</groupId>
+    <groupId>com.aliyun.osstables</groupId>
     <artifactId>osstables-lance-connector</artifactId>
-    <version>0.1.0-rc1</version>
+    <version>1.0.0-rc1</version>
     <packaging>jar</packaging>
 
     <name>OssTables Lance Connector</name>
@@ -111,10 +111,6 @@
                     <encoding>UTF-8</encoding>
                     <doclint>none</doclint>
                     <quiet>true</quiet>
-                    <nonavbar>true</nonavbar>
-                    <notree>true</notree>
-                    <nocomment>true</nocomment>
-                    <nohelp>true</nohelp>
                     <detectJavaApiLink>false</detectJavaApiLink>
                 </configuration>
                 <executions>

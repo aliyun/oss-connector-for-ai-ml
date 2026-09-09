@@ -36,7 +36,6 @@ __all__ = [
     "PROP_ACCESS_KEY_ID",
     "PROP_SECRET_ACCESS_KEY",
     "PROP_SESSION_TOKEN",
-    "PROP_DOUBLE_URI_ENCODE",
 ]
 
 # Every property this implementation reads is namespaced with ``osstables.`` so it
@@ -48,7 +47,6 @@ PROP_SERVICE = PROPERTY_PREFIX + "service"
 PROP_ACCESS_KEY_ID = PROPERTY_PREFIX + "access_key_id"
 PROP_SECRET_ACCESS_KEY = PROPERTY_PREFIX + "secret_access_key"
 PROP_SESSION_TOKEN = PROPERTY_PREFIX + "session_token"
-PROP_DOUBLE_URI_ENCODE = PROPERTY_PREFIX + "double_uri_encode"
 
 _ALGORITHM = "AWS4-HMAC-SHA256"
 _UNRESERVED = "-._~"
@@ -141,9 +139,8 @@ def host_header_from_url(url: str) -> str:
 def canonical_uri(path: str, double_uri_encode: bool = True) -> str:
     """Build the canonical URI from the on-wire (already percent-encoded) path.
 
-    With ``double_uri_encode`` (the default, matching the aws-sigv4 crate used
-    by Lance PR #7099 for non-S3 services), each on-wire path segment is
-    percent-encoded once more.
+    With ``double_uri_encode`` (the default, which SigV4 mandates for every
+    service except S3), each on-wire path segment is percent-encoded once more.
     """
     if not path:
         return "/"

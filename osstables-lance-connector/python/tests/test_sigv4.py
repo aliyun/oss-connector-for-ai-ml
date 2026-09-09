@@ -57,6 +57,30 @@ EXPECTED_SIGNING_KEY_HEX = (
 )
 EXPECTED_SIGNATURE = "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7"
 
+# AWS SigV4 test suite: get-vanilla-with-session-token
+# https://github.com/boto/botocore/tree/1377306cb9be15c684d10fe0e64ea179961ec3f7/tests/unit/auth/aws4_testsuite/get-vanilla-with-session-token
+AWS_SESSION_TOKEN = "6e86291e8372ff2a2260956d9b8aae1d763fbf315fa00fa31553b73ebf194267"
+AWS_SESSION_EXPECTED_CANONICAL_REQUEST = (
+    "GET\n"
+    "/\n"
+    "\n"
+    "host:example.amazonaws.com\n"
+    "x-amz-date:20150830T123600Z\n"
+    f"x-amz-security-token:{AWS_SESSION_TOKEN}\n"
+    "\n"
+    "host;x-amz-date;x-amz-security-token\n"
+    + EMPTY_SHA256
+)
+AWS_SESSION_EXPECTED_STRING_TO_SIGN = (
+    "AWS4-HMAC-SHA256\n"
+    "20150830T123600Z\n"
+    "20150830/us-east-1/service/aws4_request\n"
+    "067b36aa60031588cea4a4cde1f21215227a047690c72247f1d70b32fbbfad2b"
+)
+AWS_SESSION_EXPECTED_SIGNATURE = (
+    "07ec1639c89043aa0e3e2de82b96708f198cceab042d4a97044c66dd9f74e7f8"
+)
+
 
 class TestAwsKnownVector:
     def test_canonical_request(self):
@@ -89,6 +113,26 @@ class TestAwsKnownVector:
         key = signing_key(AWS_SK, "20150830", AWS_REGION, AWS_SERVICE)
         signature = hmac.new(key, sts.encode("utf-8"), hashlib.sha256).hexdigest()
         assert signature == EXPECTED_SIGNATURE
+
+    def test_session_token_full_signature(self):
+        headers = {
+            "host": "example.amazonaws.com",
+            "x-amz-date": AWS_DATE,
+            "x-amz-security-token": AWS_SESSION_TOKEN,
+        }
+        creq, signed_headers = canonical_request(
+            "GET", "https://example.amazonaws.com/", headers, EMPTY_SHA256
+        )
+        assert creq == AWS_SESSION_EXPECTED_CANONICAL_REQUEST
+        assert signed_headers == "host;x-amz-date;x-amz-security-token"
+
+        scope = "20150830/us-east-1/service/aws4_request"
+        sts = string_to_sign(AWS_DATE, scope, creq)
+        assert sts == AWS_SESSION_EXPECTED_STRING_TO_SIGN
+
+        key = signing_key(AWS_SK, "20150830", "us-east-1", "service")
+        signature = hmac.new(key, sts.encode("utf-8"), hashlib.sha256).hexdigest()
+        assert signature == AWS_SESSION_EXPECTED_SIGNATURE
 
 
 def _independent_signature(
@@ -306,6 +350,12 @@ class TestResolveCredentials:
         monkeypatch.setenv("AWS_ACCESS_KEY_ID", "env-ak")
         monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "env-sk")
         assert resolve_credentials({}) == Credentials("env-ak", "env-sk", None)
+
+    def test_aws_env_with_session_token(self, monkeypatch):
+        monkeypatch.setenv("AWS_ACCESS_KEY_ID", "env-ak")
+        monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "env-sk")
+        monkeypatch.setenv("AWS_SESSION_TOKEN", "env-token")
+        assert resolve_credentials({}) == Credentials("env-ak", "env-sk", "env-token")
 
     def test_alibaba_env(self, monkeypatch):
         monkeypatch.setenv("ALIBABA_CLOUD_ACCESS_KEY_ID", "ali-ak")

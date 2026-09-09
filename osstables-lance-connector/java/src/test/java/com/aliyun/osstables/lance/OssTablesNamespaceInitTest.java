@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -30,6 +30,57 @@ class OssTablesNamespaceInitTest {
         "OssTablesNamespace { uri: \"https://bucket.cn-hangzhou-internal.oss-tables.aliyuncs.com/lance\", "
             + "region: \"cn-hangzhou\", service: \"osstables\" }",
         ns.namespaceId());
+  }
+
+  @Test
+  void explicitFixedSigningValuesAccepted() {
+    Map<String, String> p = baseProps();
+    p.put(SigV4Signer.PROPERTY_SERVICE, "osstables");
+    p.put("osstables.double_uri_encode", "true");
+    new OssTablesNamespace().initialize(p, null);
+  }
+
+  @Test
+  void nonOsstablesServiceRejected() {
+    Map<String, String> p = baseProps();
+    p.put(SigV4Signer.PROPERTY_SERVICE, "s3");
+    assertThrows(InvalidInputException.class, () -> new OssTablesNamespace().initialize(p, null));
+  }
+
+  @Test
+  void falseDoubleUriEncodeRejected() {
+    Map<String, String> p = baseProps();
+    p.put("osstables.double_uri_encode", "false");
+    assertThrows(InvalidInputException.class, () -> new OssTablesNamespace().initialize(p, null));
+  }
+
+  @Test
+  void invalidDoubleUriEncodeRejected() {
+    for (String value : Arrays.asList("1", "0", "yes", "no", "invalid", "")) {
+      Map<String, String> p = baseProps();
+      p.put("osstables.double_uri_encode", value);
+      assertThrows(
+          InvalidInputException.class, () -> new OssTablesNamespace().initialize(p, null));
+    }
+  }
+
+  @Test
+  void verifySslAcceptsOnlyBooleanWords() {
+    for (String value : Arrays.asList("true", "false", "TRUE", "FALSE")) {
+      Map<String, String> p = baseProps();
+      p.put(OssTablesNamespace.PROPERTY_VERIFY_SSL, value);
+      new OssTablesNamespace().initialize(p, null);
+    }
+  }
+
+  @Test
+  void invalidVerifySslRejected() {
+    for (String value : Arrays.asList("1", "0", "yes", "no", "flase", "")) {
+      Map<String, String> p = baseProps();
+      p.put(OssTablesNamespace.PROPERTY_VERIFY_SSL, value);
+      assertThrows(
+          InvalidInputException.class, () -> new OssTablesNamespace().initialize(p, null));
+    }
   }
 
   @Test

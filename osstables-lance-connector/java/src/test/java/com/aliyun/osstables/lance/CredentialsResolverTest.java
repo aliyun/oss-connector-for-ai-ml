@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,6 +43,17 @@ class CredentialsResolverTest {
     e.put("AWS_SECRET_ACCESS_KEY", "env-sk");
     assertEquals(
         new Credentials("env-ak", "env-sk", null),
+        CredentialsResolver.resolve(new HashMap<>(), env(e)));
+  }
+
+  @Test
+  void awsEnvWithSessionToken() {
+    Map<String, String> e = new HashMap<>();
+    e.put("AWS_ACCESS_KEY_ID", "env-ak");
+    e.put("AWS_SECRET_ACCESS_KEY", "env-sk");
+    e.put("AWS_SESSION_TOKEN", "env-token");
+    assertEquals(
+        new Credentials("env-ak", "env-sk", "env-token"),
         CredentialsResolver.resolve(new HashMap<>(), env(e)));
   }
 

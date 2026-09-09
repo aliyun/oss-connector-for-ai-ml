@@ -209,6 +209,7 @@ def namespace(gateway):
             "osstables.uri": gateway.uri,
             "osstables.region": TEST_REGION,
             "osstables.service": TEST_SERVICE,
+            "osstables.double_uri_encode": "true",
             "osstables.access_key_id": TEST_AK,
             "osstables.secret_access_key": TEST_SK,
         },
@@ -216,6 +217,72 @@ def namespace(gateway):
 
 
 class TestContract:
+    @staticmethod
+    def _properties(gateway, **extra):
+        properties = {
+            "osstables.uri": gateway.uri,
+            "osstables.region": TEST_REGION,
+            "osstables.access_key_id": TEST_AK,
+            "osstables.secret_access_key": TEST_SK,
+        }
+        properties.update(extra)
+        return properties
+
+    def test_explicit_fixed_signing_values_accepted(self, gateway):
+        ns = connect(
+            "osstables",
+            self._properties(
+                gateway,
+                **{
+                    "osstables.service": "osstables",
+                    "osstables.double_uri_encode": "true",
+                },
+            ),
+        )
+        assert "OssTablesNamespace" in ns.namespace_id()
+
+    def test_false_double_uri_encode_rejected(self, gateway):
+        with pytest.raises(ValueError, match="requires double URI encoding"):
+            connect(
+                "osstables",
+                self._properties(
+                    gateway, **{"osstables.double_uri_encode": "false"}
+                ),
+            )
+
+    @pytest.mark.parametrize("value", ["1", "0", "yes", "no", "invalid", ""])
+    def test_invalid_double_uri_encode_rejected(self, gateway, value):
+        with pytest.raises(ValueError, match="must be 'true' or 'false'"):
+            connect(
+                "osstables",
+                self._properties(
+                    gateway, **{"osstables.double_uri_encode": value}
+                ),
+            )
+
+    @pytest.mark.parametrize("value", ["true", "false", "TRUE", "FALSE"])
+    def test_verify_ssl_accepts_only_boolean_words(self, gateway, value):
+        ns = connect(
+            "osstables",
+            self._properties(gateway, **{"osstables.verify_ssl": value}),
+        )
+        assert "OssTablesNamespace" in ns.namespace_id()
+
+    @pytest.mark.parametrize("value", ["1", "0", "yes", "no", "flase", ""])
+    def test_invalid_verify_ssl_rejected(self, gateway, value):
+        with pytest.raises(ValueError, match="must be 'true' or 'false'"):
+            connect(
+                "osstables",
+                self._properties(gateway, **{"osstables.verify_ssl": value}),
+            )
+
+    def test_non_osstables_service_rejected(self, gateway):
+        with pytest.raises(ValueError, match="must be 'osstables'"):
+            connect(
+                "osstables",
+                self._properties(gateway, **{"osstables.service": "s3"}),
+            )
+
     def test_connect_by_class_path(self, gateway):
         ns = connect(
             "osstables_lance_connector.OssTablesNamespace",

@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

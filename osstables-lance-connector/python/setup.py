@@ -42,6 +42,10 @@ setup(
     author=AUTHOR,
     license="MIT",
     url=URL,
+    project_urls={
+        "Source": URL,
+        "Issues": URL + "/issues",
+    },
     keywords=["aliyun", "oss", "osstables", "lance", "namespace"],
     package_dir={"": "src"},
     packages=find_packages(where="src", exclude=["tests*"]),

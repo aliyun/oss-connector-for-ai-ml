@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -36,7 +36,6 @@ public final class SigV4Signer {
   public static final String PROPERTY_ACCESS_KEY_ID = PROPERTY_PREFIX + "access_key_id";
   public static final String PROPERTY_SECRET_ACCESS_KEY = PROPERTY_PREFIX + "secret_access_key";
   public static final String PROPERTY_SESSION_TOKEN = PROPERTY_PREFIX + "session_token";
-  public static final String PROPERTY_DOUBLE_URI_ENCODE = PROPERTY_PREFIX + "double_uri_encode";
 
   private static final String ALGORITHM = "AWS4-HMAC-SHA256";
   private static final DateTimeFormatter AMZ_DATE_FORMAT =

@@ -1,15 +1,15 @@
 # OssTables Lance Connector
 
-Connect [Lance](https://lance.org) to the Alibaba Cloud **OSS Tables** catalog.
+Connect [Lance](https://lance.org) to the Alibaba Cloud **OssTables** catalog.
 
-OSS Tables exposes a [Lance REST Namespace](https://lance.org/docs/namespace/) endpoint
+OssTables exposes a [Lance REST Namespace](https://lance.org/docs/namespace/) endpoint
 secured with AWS Signature Version 4. This connector implements that namespace and signs
-every request, so you can use OSS Tables from Lance, Spark, Trino and Ray with your normal
+every request, so you can use OssTables from Lance, Spark, Trino and Ray with your normal
 Alibaba Cloud credentials.
 
 ## Requirements
 
-| | |
+| Component | Version |
 |---|---|
 | Python | 3.9 or later |
 | Java | 8 or later (tested on 17, 21 and 24) |
@@ -32,9 +32,9 @@ pip install pylance
 
 ```xml
 <dependency>
-    <groupId>com.aliyun.lance</groupId>
+    <groupId>com.aliyun.osstables</groupId>
     <artifactId>osstables-lance-connector</artifactId>
-    <version>0.1.0-rc1</version>
+    <version>1.0.0-rc1</version>
 </dependency>
 ```
 
@@ -60,9 +60,16 @@ Every option uses the `osstables.` prefix.
 | `osstables.access_key_id` | no | | Access key ID. Omit to use environment variables |
 | `osstables.secret_access_key` | no | | Access key secret |
 | `osstables.session_token` | no | | Security token, when using STS credentials |
-| `osstables.service` | no | `osstables` | Service name used for request signing |
 | `osstables.delimiter` | no | `$` | Separator for multi-level table identifiers |
-| `osstables.verify_ssl` | no | `true` | Set to `false` to skip TLS certificate verification |
+| `osstables.verify_ssl` | no | `true` | Verify TLS certificates; accepts only `true` or `false` |
+| `osstables.service` | no | `osstables` | SigV4 service name; only `osstables` is accepted |
+| `osstables.double_uri_encode` | no | `true` | Double-encode URI paths for SigV4; only `true` is accepted |
+
+`osstables.service` and `osstables.double_uri_encode` are retained for compatibility with
+older configurations, but OssTables requires their fixed values. The connector fails fast
+if either option is set to another value. Setting `osstables.verify_ssl=false` disables both
+certificate-chain and hostname verification; use it only for isolated testing, never in
+production.
 
 ### Credentials
 
@@ -73,9 +80,13 @@ Credentials are taken from the first source that provides them:
    `ALIBABA_CLOUD_SECURITY_TOKEN`.
 3. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and, optionally, `AWS_SESSION_TOKEN`.
 
+Explicit access key ID and secret access key options must be provided together. Supplying
+only one is an error and does not fall back to environment variables. When using temporary
+credentials, supply the matching session token from the same source.
+
 These credentials authenticate you to the **catalog**. Reading and writing table data goes
-straight to OSS and is authorized separately — see
-[Reading and writing data](#reading-and-writing-data).
+straight to OSS and is authorized separately, using the storage options shown under
+"Reading and writing data" below.
 
 ## Getting started
 
@@ -93,6 +104,7 @@ namespace = lance_namespace.connect(
         "osstables.region": "cn-hangzhou",
         "osstables.access_key_id": "...",
         "osstables.secret_access_key": "...",
+        # "osstables.session_token": "...",  # required for STS credentials
     },
 )
 
@@ -111,7 +123,7 @@ namespace = lance_namespace.connect(
 ### Java
 
 ```java
-import com.aliyun.lance.osstables.OssTablesNamespace;
+import com.aliyun.osstables.lance.OssTablesNamespace;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -124,11 +136,12 @@ options.put("osstables.uri", "https://my-bucket.cn-hangzhou.oss-tables.aliyuncs.
 options.put("osstables.region", "cn-hangzhou");
 options.put("osstables.access_key_id", "...");
 options.put("osstables.secret_access_key", "...");
+// options.put("osstables.session_token", "..."); // required for STS credentials
 
-try (RootAllocator allocator = new RootAllocator()) {
-    LanceNamespace namespace =
-        LanceNamespace.connect(OssTablesNamespace.class.getName(), options, allocator);
-
+try (RootAllocator allocator = new RootAllocator();
+    OssTablesNamespace namespace =
+        (OssTablesNamespace)
+            LanceNamespace.connect(OssTablesNamespace.class.getName(), options, allocator)) {
     namespace.createNamespace(
         new CreateNamespaceRequest().id(Collections.singletonList("sales")));
 }
@@ -146,6 +159,7 @@ import pyarrow as pa
 storage_options = {
     "access_key_id": "...",
     "access_key_secret": "...",
+    # "security_token": "...",  # required for STS credentials
     "endpoint": "https://oss-cn-hangzhou.aliyuncs.com",
     "region": "cn-hangzhou",
 }
@@ -168,46 +182,62 @@ dataset = lance.dataset(
 print(dataset.to_table())
 ```
 
+Instead of passing `storage_options`, Lance can read OSS credentials and connection settings
+from `OSS_ACCESS_KEY_ID`, `OSS_ACCESS_KEY_SECRET`, optional `OSS_SECURITY_TOKEN`,
+`OSS_ENDPOINT` and `OSS_REGION`. These data-plane variables are independent of the catalog
+credential variables described above.
+
 ## Query engines
 
 Add the connector jar to the engine's class path and point the Lance catalog at this
 implementation. Catalog credentials use the `osstables.` prefix; data access uses
-`storage.`.
+`storage.`. With temporary credentials, configure both the catalog session token and the
+OSS storage session token. If you use environment variables instead, make them available to
+every process that accesses the catalog or data, including Spark drivers and executors or
+Trino servers and workers.
 
 ### Spark
 
+Every key is `spark.sql.catalog.<catalog-name>.<option>`, so an `osstables.` option
+appears after the catalog name. `my_catalog` below is the name used in SQL and can be
+anything.
+
 ```properties
-spark.sql.catalog.osstables                             org.lance.spark.LanceNamespaceSparkCatalog
-spark.sql.catalog.osstables.impl                        com.aliyun.lance.osstables.OssTablesNamespace
-spark.sql.catalog.osstables.osstables.uri               https://my-bucket.cn-hangzhou.oss-tables.aliyuncs.com/lance
-spark.sql.catalog.osstables.osstables.region            cn-hangzhou
-spark.sql.catalog.osstables.osstables.access_key_id     ...
-spark.sql.catalog.osstables.osstables.secret_access_key ...
-spark.sql.catalog.osstables.storage.access_key_id       ...
-spark.sql.catalog.osstables.storage.access_key_secret   ...
-spark.sql.catalog.osstables.storage.endpoint            https://oss-cn-hangzhou.aliyuncs.com
-spark.sql.catalog.osstables.storage.region              cn-hangzhou
+spark.sql.catalog.my_catalog                             org.lance.spark.LanceNamespaceSparkCatalog
+spark.sql.catalog.my_catalog.impl                        com.aliyun.osstables.lance.OssTablesNamespace
+spark.sql.catalog.my_catalog.osstables.uri               https://my-bucket.cn-hangzhou.oss-tables.aliyuncs.com/lance
+spark.sql.catalog.my_catalog.osstables.region            cn-hangzhou
+spark.sql.catalog.my_catalog.osstables.access_key_id     ...
+spark.sql.catalog.my_catalog.osstables.secret_access_key ...
+spark.sql.catalog.my_catalog.osstables.session_token     ...
+spark.sql.catalog.my_catalog.storage.access_key_id       ...
+spark.sql.catalog.my_catalog.storage.access_key_secret   ...
+spark.sql.catalog.my_catalog.storage.security_token      ...
+spark.sql.catalog.my_catalog.storage.endpoint            https://oss-cn-hangzhou.aliyuncs.com
+spark.sql.catalog.my_catalog.storage.region              cn-hangzhou
 ```
 
 ```sql
-CREATE NAMESPACE osstables.sales;
-CREATE TABLE osstables.sales.orders (id INT) USING lance;
-SELECT * FROM osstables.sales.orders;
+CREATE NAMESPACE my_catalog.sales;
+CREATE TABLE my_catalog.sales.orders (id INT) USING lance;
+SELECT * FROM my_catalog.sales.orders;
 ```
 
 ### Trino
 
-`etc/catalog/osstables.properties`:
+`etc/catalog/my_catalog.properties`, where the file name is the catalog name in SQL:
 
 ```properties
 connector.name=lance
-lance.impl=com.aliyun.lance.osstables.OssTablesNamespace
+lance.impl=com.aliyun.osstables.lance.OssTablesNamespace
 lance.osstables.uri=https://my-bucket.cn-hangzhou.oss-tables.aliyuncs.com/lance
 lance.osstables.region=cn-hangzhou
 lance.osstables.access_key_id=...
 lance.osstables.secret_access_key=...
+lance.osstables.session_token=...
 lance.storage.access_key_id=...
 lance.storage.access_key_secret=...
+lance.storage.security_token=...
 lance.storage.endpoint=https://oss-cn-hangzhou.aliyuncs.com
 lance.storage.region=cn-hangzhou
 ```
@@ -228,20 +258,6 @@ dataset = read_lance(
 )
 ```
 
-## Building from source
-
-```bash
-# Python
-cd python
-pip install -e ".[dev]"
-pytest
-
-# Java
-cd java
-mvn test           # run the test suite
-mvn package        # build the jar
-```
-
 ## License
 
-Released under the [MIT License](../LICENSE).
+Released under the [MIT License](https://github.com/aliyun/oss-connector-for-ai-ml/blob/main/LICENSE).

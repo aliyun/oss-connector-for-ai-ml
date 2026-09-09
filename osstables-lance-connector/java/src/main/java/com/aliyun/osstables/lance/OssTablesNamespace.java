@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,7 +54,7 @@ import org.lance.namespace.model.TableExistsRequest;
 /**
  * SigV4-signed Lance REST Namespace implementation for OssTable.
  *
- * <p>Loaded via {@code LanceNamespace.connect("com.aliyun.lance.osstables.OssTablesNamespace", props,
+ * <p>Loaded via {@code LanceNamespace.connect("com.aliyun.osstables.lance.OssTablesNamespace", props,
  * allocator)}, or via the {@code "osstables"} alias after calling {@link #register()}. Ports the
  * Python {@code OssTablesNamespace}.
  */
@@ -64,6 +64,9 @@ public class OssTablesNamespace implements LanceNamespace, Closeable {
   public static final String PROPERTY_DELIMITER = SigV4Signer.PROPERTY_PREFIX + "delimiter";
   public static final String PROPERTY_VERIFY_SSL = SigV4Signer.PROPERTY_PREFIX + "verify_ssl";
 
+  private static final String PROPERTY_DOUBLE_URI_ENCODE =
+      SigV4Signer.PROPERTY_PREFIX + "double_uri_encode";
+  private static final String SERVICE = "osstables";
   private static final ObjectMapper JSON = new ObjectMapper();
 
   private String uri;
@@ -79,22 +82,37 @@ public class OssTablesNamespace implements LanceNamespace, Closeable {
 
   /** Registers the {@code "osstables"} alias for this implementation. */
   public static void register() {
-    LanceNamespace.registerNamespaceImpl("osstables", "com.aliyun.lance.osstables.OssTablesNamespace");
+    LanceNamespace.registerNamespaceImpl("osstables", "com.aliyun.osstables.lance.OssTablesNamespace");
   }
 
   @Override
   public void initialize(Map<String, String> configProperties, BufferAllocator allocator) {
     this.uri = stripTrailingSlashes(required(configProperties, PROPERTY_URI));
     this.region = required(configProperties, SigV4Signer.PROPERTY_REGION);
-    this.service =
-        configProperties.getOrDefault(SigV4Signer.PROPERTY_SERVICE, "osstables");
-    this.delimiter = configProperties.getOrDefault(PROPERTY_DELIMITER, "$");
+    this.service = configProperties.getOrDefault(SigV4Signer.PROPERTY_SERVICE, SERVICE);
+    if (!SERVICE.equals(service)) {
+      throw new InvalidInputException(
+          "Property '"
+              + SigV4Signer.PROPERTY_SERVICE
+              + "' must be '"
+              + SERVICE
+              + "', got '"
+              + service
+              + "'");
+    }
     boolean doubleUriEncode =
-        parseBoolean(configProperties.get(SigV4Signer.PROPERTY_DOUBLE_URI_ENCODE), true);
-    boolean verifySsl = parseBoolean(configProperties.get(PROPERTY_VERIFY_SSL), true);
+        parseBoolean(configProperties, PROPERTY_DOUBLE_URI_ENCODE, true);
+    if (!doubleUriEncode) {
+      throw new InvalidInputException(
+          "Property '"
+              + PROPERTY_DOUBLE_URI_ENCODE
+              + "' must be true; OssTables requires double URI encoding");
+    }
+    this.delimiter = configProperties.getOrDefault(PROPERTY_DELIMITER, "$");
+    boolean verifySsl = parseBoolean(configProperties, PROPERTY_VERIFY_SSL, true);
 
     Credentials credentials = CredentialsResolver.resolve(configProperties, EnvProvider.system());
-    SigV4Signer signer = new SigV4Signer(region, service, credentials, doubleUriEncode);
+    SigV4Signer signer = new SigV4Signer(region, service, credentials, true);
     SigV4Interceptor interceptor = new SigV4Interceptor(signer, Clock.systemUTC());
 
     this.httpClient = buildHttpClient(interceptor, verifySsl);
@@ -321,11 +339,19 @@ public class OssTablesNamespace implements LanceNamespace, Closeable {
     return value.substring(0, end);
   }
 
-  private static boolean parseBoolean(String value, boolean defaultValue) {
-    if (value == null) {
+  private static boolean parseBoolean(
+      Map<String, String> properties, String key, boolean defaultValue) {
+    if (!properties.containsKey(key)) {
       return defaultValue;
     }
-    String lower = value.toLowerCase();
-    return !(lower.equals("false") || lower.equals("0") || lower.equals("no"));
+    String value = properties.get(key);
+    if ("true".equalsIgnoreCase(value)) {
+      return true;
+    }
+    if ("false".equalsIgnoreCase(value)) {
+      return false;
+    }
+    throw new InvalidInputException(
+        "Property '" + key + "' must be 'true' or 'false', got '" + value + "'");
   }
 }

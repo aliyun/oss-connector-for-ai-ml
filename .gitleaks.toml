@@ -1,0 +1,12 @@
+title = "OSS connector secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public AWS session-token vector and generated SigV4 signatures"
+regexTarget = "secret"
+regexes = [
+  '''^6e86291e8372ff2a2260956d9b8aae1d763fbf315fa00fa31553b73ebf194267$''',
+  '''^Signature=[0-9a-f]{64}$''',
+]

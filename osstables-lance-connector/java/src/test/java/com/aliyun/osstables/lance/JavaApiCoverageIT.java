@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,7 +43,7 @@ class JavaApiCoverageIT {
     props.put(SigV4Signer.PROPERTY_ACCESS_KEY_ID, env("OSSTABLE_AK"));
     props.put(SigV4Signer.PROPERTY_SECRET_ACCESS_KEY, env("OSSTABLE_SK"));
     props.put(OssTablesNamespace.PROPERTY_VERIFY_SSL, "false");
-    return LanceNamespace.connect("com.aliyun.lance.osstables.OssTablesNamespace", props, null);
+    return LanceNamespace.connect("com.aliyun.osstables.lance.OssTablesNamespace", props, null);
   }
 
   @Test

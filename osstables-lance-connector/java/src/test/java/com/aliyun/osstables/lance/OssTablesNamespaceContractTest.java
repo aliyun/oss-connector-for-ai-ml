@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -81,12 +81,12 @@ class OssTablesNamespaceContractTest {
   private LanceNamespace namespace() {
     Map<String, String> extra = new HashMap<>();
     extra.put(SigV4Signer.PROPERTY_SERVICE, TEST_SERVICE);
-    return connect("com.aliyun.lance.osstables.OssTablesNamespace", extra);
+    return connect("com.aliyun.osstables.lance.OssTablesNamespace", extra);
   }
 
   @Test
   void connectByClassPath() {
-    LanceNamespace ns = connect("com.aliyun.lance.osstables.OssTablesNamespace", Collections.emptyMap());
+    LanceNamespace ns = connect("com.aliyun.osstables.lance.OssTablesNamespace", Collections.emptyMap());
     assertTrue(ns.namespaceId().contains("OssTablesNamespace"));
   }
 
@@ -147,7 +147,7 @@ class OssTablesNamespaceContractTest {
   void sessionTokenHeaderSigned() {
     Map<String, String> extra = new HashMap<>();
     extra.put(SigV4Signer.PROPERTY_SESSION_TOKEN, "sts-session-token");
-    LanceNamespace ns = connect("com.aliyun.lance.osstables.OssTablesNamespace", extra);
+    LanceNamespace ns = connect("com.aliyun.osstables.lance.OssTablesNamespace", extra);
     ns.describeTable(new DescribeTableRequest().id(Arrays.asList("my_db", "my_table")));
     MockGateway.Recorded last = gateway.last();
     assertEquals("sts-session-token", last.headers.get("x-amz-security-token"));
@@ -161,7 +161,7 @@ class OssTablesNamespaceContractTest {
     props.put(SigV4Signer.PROPERTY_REGION, TEST_REGION);
     props.put(SigV4Signer.PROPERTY_ACCESS_KEY_ID, TEST_AK);
     props.put(SigV4Signer.PROPERTY_SECRET_ACCESS_KEY, "wrong-sk");
-    LanceNamespace ns = LanceNamespace.connect("com.aliyun.lance.osstables.OssTablesNamespace", props, null);
+    LanceNamespace ns = LanceNamespace.connect("com.aliyun.osstables.lance.OssTablesNamespace", props, null);
     assertThrows(
         UnauthenticatedException.class,
         () -> ns.describeTable(new DescribeTableRequest().id(Arrays.asList("my_db", "my_table"))));
