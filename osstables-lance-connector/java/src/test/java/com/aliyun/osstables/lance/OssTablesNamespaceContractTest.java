@@ -2,6 +2,7 @@ package com.aliyun.osstables.lance;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,6 +35,10 @@ import org.lance.namespace.model.DeclareTableRequest;
 import org.lance.namespace.model.DeclareTableResponse;
 import org.lance.namespace.model.DescribeTableRequest;
 import org.lance.namespace.model.DescribeTableResponse;
+import org.lance.namespace.model.NamespaceExistsRequest;
+import org.lance.namespace.model.NamespaceExistsResponse;
+import org.lance.namespace.model.TableExistsRequest;
+import org.lance.namespace.model.TableExistsResponse;
 
 /**
  * Contract tests: run {@link OssTablesNamespace} against a local mock HTTP server that verifies
@@ -113,6 +118,23 @@ class OssTablesNamespaceContractTest {
   void createNamespace() {
     namespace().createNamespace(new CreateNamespaceRequest().id(Collections.singletonList("my_db")));
     assertTrue(gateway.last().path.startsWith("/lance/v1/namespace/my_db/create"));
+  }
+
+  @Test
+  void namespaceExists() {
+    NamespaceExistsResponse response =
+        namespace()
+            .namespaceExists(new NamespaceExistsRequest().id(Collections.singletonList("my_db")));
+    assertNotNull(response);
+    assertTrue(gateway.last().path.startsWith("/lance/v1/namespace/my_db/exists"));
+  }
+
+  @Test
+  void tableExists() {
+    TableExistsResponse response =
+        namespace().tableExists(new TableExistsRequest().id(Arrays.asList("my_db", "my_table")));
+    assertNotNull(response);
+    assertTrue(gateway.last().path.startsWith("/lance/v1/table/my_db%24my_table/exists"));
   }
 
   @Test
@@ -249,6 +271,10 @@ class OssTablesNamespaceContractTest {
         respond(exchange, 200, "{\"properties\":{}}");
       } else if (path.endsWith("/create") && path.contains("/table/")) {
         respond(exchange, 200, "{\"location\":\"oss://bucket/my_db/created\",\"version\":1}");
+      } else if (path.endsWith("/exists") && path.contains("/namespace/")) {
+        respond(exchange, 200, "{}");
+      } else if (path.endsWith("/exists") && path.contains("/table/")) {
+        respond(exchange, 200, "{}");
       } else {
         respond(exchange, 404, "{\"code\":4,\"error\":\"no route: " + path + "\"}");
       }

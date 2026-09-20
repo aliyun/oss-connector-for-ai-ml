@@ -35,11 +35,13 @@ from lance_namespace import (
     ListTableVersionsRequest,
     ListTableVersionsResponse,
     NamespaceExistsRequest,
+    NamespaceExistsResponse,
     PermissionDeniedError,
     RenameTableRequest,
     RenameTableResponse,
     ServiceUnavailableError,
     TableExistsRequest,
+    TableExistsResponse,
     ThrottlingError,
     UnauthenticatedError,
     from_error_code,
@@ -264,14 +266,17 @@ class OssTablesNamespace(LanceNamespace):
                 delimiter=self._delimiter,
             )
 
-    def namespace_exists(self, request: NamespaceExistsRequest) -> None:
+    def namespace_exists(
+        self, request: NamespaceExistsRequest
+    ) -> NamespaceExistsResponse:
         req = _to_model(request, NamespaceExistsRequest)
         with _translate_errors():
-            return self._namespace_api.namespace_exists(
+            self._namespace_api.namespace_exists(
                 id=self._id_string(req.id),
                 namespace_exists_request=req,
                 delimiter=self._delimiter,
             )
+        return NamespaceExistsResponse()
 
     def list_tables(self, request: ListTablesRequest) -> ListTablesResponse:
         req = _to_model(request, ListTablesRequest)
@@ -331,14 +336,15 @@ class OssTablesNamespace(LanceNamespace):
                 delimiter=self._delimiter,
             )
 
-    def table_exists(self, request: TableExistsRequest) -> None:
+    def table_exists(self, request: TableExistsRequest) -> TableExistsResponse:
         req = _to_model(request, TableExistsRequest)
         with _translate_errors():
-            return self._table_api.table_exists(
+            self._table_api.table_exists(
                 id=self._id_string(req.id),
                 table_exists_request=req,
                 delimiter=self._delimiter,
             )
+        return TableExistsResponse()
 
     def deregister_table(
         self, request: DeregisterTableRequest

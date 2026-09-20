@@ -34,7 +34,7 @@ pip install pylance
 <dependency>
     <groupId>com.aliyun.osstables</groupId>
     <artifactId>osstables-lance-connector</artifactId>
-    <version>1.0.0-rc2</version>
+    <version>1.0.0-rc3</version>
 </dependency>
 ```
 
@@ -44,7 +44,7 @@ Arrow is a `provided` dependency, so add an Arrow allocator to your application:
 <dependency>
     <groupId>org.apache.arrow</groupId>
     <artifactId>arrow-memory-netty</artifactId>
-    <version>15.0.0</version>
+    <version>18.3.0</version>
     <scope>runtime</scope>
 </dependency>
 ```

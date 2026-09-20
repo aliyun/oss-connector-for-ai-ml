@@ -28,8 +28,8 @@ with open(os.path.join(TOPDIR, "README.md"), encoding="utf-8") as fp:
     LONG_DESCRIPTION = fp.read()
 
 requires = [
-    "lance-namespace>=0.8.0",
-    "lance-namespace-urllib3-client>=0.8.0",
+    "lance-namespace>=0.9.0",
+    "lance-namespace-urllib3-client>=0.9.0",
     "urllib3>=1.26",
 ]
 

@@ -47,9 +47,11 @@ import org.lance.namespace.model.ListTableVersionsResponse;
 import org.lance.namespace.model.ListTablesRequest;
 import org.lance.namespace.model.ListTablesResponse;
 import org.lance.namespace.model.NamespaceExistsRequest;
+import org.lance.namespace.model.NamespaceExistsResponse;
 import org.lance.namespace.model.RenameTableRequest;
 import org.lance.namespace.model.RenameTableResponse;
 import org.lance.namespace.model.TableExistsRequest;
+import org.lance.namespace.model.TableExistsResponse;
 
 /**
  * SigV4-signed Lance REST Namespace implementation for OssTable.
@@ -169,9 +171,10 @@ public class OssTablesNamespace implements LanceNamespace, Closeable {
   }
 
   @Override
-  public void namespaceExists(NamespaceExistsRequest request) {
+  public NamespaceExistsResponse namespaceExists(NamespaceExistsRequest request) {
     ErrorTranslator.translateVoid(
         () -> namespaceApi.namespaceExists(idString(request.getId()), request, delimiter));
+    return new NamespaceExistsResponse();
   }
 
   @Override
@@ -227,9 +230,10 @@ public class OssTablesNamespace implements LanceNamespace, Closeable {
   }
 
   @Override
-  public void tableExists(TableExistsRequest request) {
+  public TableExistsResponse tableExists(TableExistsRequest request) {
     ErrorTranslator.translateVoid(
         () -> tableApi.tableExists(idString(request.getId()), request, delimiter));
+    return new TableExistsResponse();
   }
 
   @Override
