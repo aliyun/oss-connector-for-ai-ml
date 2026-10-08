@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,8 +19,10 @@ import org.lance.namespace.model.DropTableRequest;
 import org.lance.namespace.model.ListNamespacesRequest;
 import org.lance.namespace.model.ListTablesRequest;
 import org.lance.namespace.model.NamespaceExistsRequest;
+import org.lance.namespace.model.NamespaceExistsResponse;
 import org.lance.namespace.model.RenameTableRequest;
 import org.lance.namespace.model.TableExistsRequest;
+import org.lance.namespace.model.TableExistsResponse;
 
 /**
  * W12 live coverage: exercise the catalog-only APIs directly through the Java SDK against a live
@@ -43,7 +45,7 @@ class JavaApiCoverageIT {
     props.put(SigV4Signer.PROPERTY_ACCESS_KEY_ID, env("OSSTABLE_AK"));
     props.put(SigV4Signer.PROPERTY_SECRET_ACCESS_KEY, env("OSSTABLE_SK"));
     props.put(OssTablesNamespace.PROPERTY_VERIFY_SSL, "false");
-    return LanceNamespace.connect("com.aliyun.lance.osstables.OssTablesNamespace", props, null);
+    return LanceNamespace.connect("com.aliyun.osstables.lance.OssTablesNamespace", props, null);
   }
 
   @Test
@@ -70,7 +72,8 @@ class JavaApiCoverageIT {
     run(results, failures, "3.namespaceExists(true)", () -> {
       NamespaceExistsRequest r = new NamespaceExistsRequest();
       r.setId(nsId);
-      ns.namespaceExists(r);
+      NamespaceExistsResponse resp = ns.namespaceExists(r);
+      require(resp != null, "namespaceExists returned null response");
       return "exists";
     });
 
@@ -99,7 +102,8 @@ class JavaApiCoverageIT {
     run(results, failures, "7.tableExists(true)", () -> {
       TableExistsRequest r = new TableExistsRequest();
       r.setId(tid);
-      ns.tableExists(r);
+      TableExistsResponse resp = ns.tableExists(r);
+      require(resp != null, "tableExists returned null response");
       return "exists";
     });
 

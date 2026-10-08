@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import java.util.Objects;
 
@@ -45,5 +45,15 @@ public final class Credentials {
   @Override
   public int hashCode() {
     return Objects.hash(accessKeyId, secretAccessKey, sessionToken);
+  }
+
+  /** @return a description with the secret and session token redacted. */
+  @Override
+  public String toString() {
+    return "Credentials{accessKeyId="
+        + accessKeyId
+        + ", secretAccessKey=***, sessionToken="
+        + (sessionToken == null ? "null" : "***")
+        + "}";
   }
 }

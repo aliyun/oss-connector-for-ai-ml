@@ -1,7 +1,9 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,6 +47,17 @@ class CredentialsResolverTest {
   }
 
   @Test
+  void awsEnvWithSessionToken() {
+    Map<String, String> e = new HashMap<>();
+    e.put("AWS_ACCESS_KEY_ID", "env-ak");
+    e.put("AWS_SECRET_ACCESS_KEY", "env-sk");
+    e.put("AWS_SESSION_TOKEN", "env-token");
+    assertEquals(
+        new Credentials("env-ak", "env-sk", "env-token"),
+        CredentialsResolver.resolve(new HashMap<>(), env(e)));
+  }
+
+  @Test
   void alibabaEnv() {
     Map<String, String> e = new HashMap<>();
     e.put("ALIBABA_CLOUD_ACCESS_KEY_ID", "ali-ak");
@@ -72,5 +85,18 @@ class CredentialsResolverTest {
     assertThrows(
         InvalidInputException.class,
         () -> CredentialsResolver.resolve(new HashMap<>(), EMPTY_ENV));
+  }
+
+  @Test
+  void toStringRedactsSecretAndToken() {
+    String text = new Credentials("ak", "super-secret", "super-token").toString();
+    assertFalse(text.contains("super-secret"));
+    assertFalse(text.contains("super-token"));
+    assertTrue(text.contains("ak"));
+  }
+
+  @Test
+  void toStringMarksAbsentTokenAsNull() {
+    assertTrue(new Credentials("ak", "sk", null).toString().contains("sessionToken=null"));
   }
 }

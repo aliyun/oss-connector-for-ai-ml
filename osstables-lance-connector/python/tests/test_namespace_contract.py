@@ -21,6 +21,10 @@ from lance_namespace import (
     CreateTableRequest,
     DeclareTableRequest,
     DescribeTableRequest,
+    NamespaceExistsRequest,
+    NamespaceExistsResponse,
+    TableExistsRequest,
+    TableExistsResponse,
     TableNotFoundError,
     UnauthenticatedError,
     connect,
@@ -169,6 +173,10 @@ class MockGateway:
                     self._respond(
                         200, {"location": "oss://bucket/my_db/created", "version": 1}
                     )
+                elif path.endswith("/exists") and "/namespace/" in path:
+                    self._respond(200, {})
+                elif path.endswith("/exists") and "/table/" in path:
+                    self._respond(200, {})
                 else:
                     self._respond(404, {"code": 4, "error": f"no route: {path}"})
 
@@ -209,6 +217,7 @@ def namespace(gateway):
             "osstables.uri": gateway.uri,
             "osstables.region": TEST_REGION,
             "osstables.service": TEST_SERVICE,
+            "osstables.double_uri_encode": "true",
             "osstables.access_key_id": TEST_AK,
             "osstables.secret_access_key": TEST_SK,
         },
@@ -216,6 +225,72 @@ def namespace(gateway):
 
 
 class TestContract:
+    @staticmethod
+    def _properties(gateway, **extra):
+        properties = {
+            "osstables.uri": gateway.uri,
+            "osstables.region": TEST_REGION,
+            "osstables.access_key_id": TEST_AK,
+            "osstables.secret_access_key": TEST_SK,
+        }
+        properties.update(extra)
+        return properties
+
+    def test_explicit_fixed_signing_values_accepted(self, gateway):
+        ns = connect(
+            "osstables",
+            self._properties(
+                gateway,
+                **{
+                    "osstables.service": "osstables",
+                    "osstables.double_uri_encode": "true",
+                },
+            ),
+        )
+        assert "OssTablesNamespace" in ns.namespace_id()
+
+    def test_false_double_uri_encode_rejected(self, gateway):
+        with pytest.raises(ValueError, match="requires double URI encoding"):
+            connect(
+                "osstables",
+                self._properties(
+                    gateway, **{"osstables.double_uri_encode": "false"}
+                ),
+            )
+
+    @pytest.mark.parametrize("value", ["1", "0", "yes", "no", "invalid", ""])
+    def test_invalid_double_uri_encode_rejected(self, gateway, value):
+        with pytest.raises(ValueError, match="must be 'true' or 'false'"):
+            connect(
+                "osstables",
+                self._properties(
+                    gateway, **{"osstables.double_uri_encode": value}
+                ),
+            )
+
+    @pytest.mark.parametrize("value", ["true", "false", "TRUE", "FALSE"])
+    def test_verify_ssl_accepts_only_boolean_words(self, gateway, value):
+        ns = connect(
+            "osstables",
+            self._properties(gateway, **{"osstables.verify_ssl": value}),
+        )
+        assert "OssTablesNamespace" in ns.namespace_id()
+
+    @pytest.mark.parametrize("value", ["1", "0", "yes", "no", "flase", ""])
+    def test_invalid_verify_ssl_rejected(self, gateway, value):
+        with pytest.raises(ValueError, match="must be 'true' or 'false'"):
+            connect(
+                "osstables",
+                self._properties(gateway, **{"osstables.verify_ssl": value}),
+            )
+
+    def test_non_osstables_service_rejected(self, gateway):
+        with pytest.raises(ValueError, match="must be 'osstables'"):
+            connect(
+                "osstables",
+                self._properties(gateway, **{"osstables.service": "s3"}),
+            )
+
     def test_connect_by_class_path(self, gateway):
         ns = connect(
             "osstables_lance_connector.OssTablesNamespace",
@@ -255,6 +330,32 @@ class TestContract:
     def test_create_namespace(self, namespace, gateway):
         namespace.create_namespace(CreateNamespaceRequest(id=["my_db"]))
         assert gateway.requests[-1]["path"].startswith("/lance/v1/namespace/my_db/create")
+
+    def test_namespace_exists(self, namespace, gateway):
+        response = namespace.namespace_exists(NamespaceExistsRequest(id=["my_db"]))
+        assert isinstance(response, NamespaceExistsResponse)
+        assert gateway.requests[-1]["path"].startswith(
+            "/lance/v1/namespace/my_db/exists"
+        )
+
+    def test_namespace_exists_with_dict_request(self, namespace, gateway):
+        # pylance Rust trampoline passes dict-like requests
+        response = namespace.namespace_exists({"id": ["my_db"]})
+        assert isinstance(response, NamespaceExistsResponse)
+        assert gateway.requests[-1]["path"].startswith(
+            "/lance/v1/namespace/my_db/exists"
+        )
+
+    def test_table_exists(self, namespace, gateway):
+        response = namespace.table_exists(TableExistsRequest(id=["my_db", "my_table"]))
+        assert isinstance(response, TableExistsResponse)
+        assert gateway.requests[-1]["path"].startswith(
+            "/lance/v1/table/my_db%24my_table/exists"
+        )
+
+    def test_table_exists_with_dict_request(self, namespace, gateway):
+        response = namespace.table_exists({"id": ["my_db", "my_table"]})
+        assert isinstance(response, TableExistsResponse)
 
     def test_create_table_binary_body(self, namespace, gateway):
         arrow_ipc = b"ARROW1\x00\x00" + bytes(range(256)) * 4

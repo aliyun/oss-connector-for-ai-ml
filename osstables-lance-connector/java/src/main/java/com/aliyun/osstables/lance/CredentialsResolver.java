@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import java.util.Map;
 import org.lance.namespace.errors.InvalidInputException;

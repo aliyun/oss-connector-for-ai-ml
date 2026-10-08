@@ -4,9 +4,9 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.aliyun.lance</groupId>
+    <groupId>com.aliyun.osstables</groupId>
     <artifactId>osstables-lance-connector</artifactId>
-    <version>0.1.0-rc1</version>
+    <version>1.0.0-rc3</version>
     <packaging>jar</packaging>
 
     <name>OssTables Lance Connector</name>
@@ -23,6 +23,9 @@
 
     <developers>
         <developer>
+            <id>aliyunproducts</id>
+            <name>Aliyun SDK</name>
+            <email>aliyunsdk@aliyun.com</email>
             <organization>Alibaba Cloud</organization>
             <organizationUrl>https://www.alibabacloud.com</organizationUrl>
         </developer>
@@ -47,9 +50,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>8</maven.compiler.release>
-        <lance.namespace.version>0.8.6</lance.namespace.version>
-        <arrow.version>15.0.0</arrow.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <lance.namespace.version>0.13.0</lance.namespace.version>
+        <arrow.version>18.3.0</arrow.version>
         <junit.version>5.10.2</junit.version>
     </properties>
 
@@ -92,39 +96,14 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.11.2</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
                     <doclint>none</doclint>
                     <quiet>true</quiet>
-                    <nonavbar>true</nonavbar>
-                    <notree>true</notree>
-                    <nocomment>true</nocomment>
-                    <nohelp>true</nohelp>
                     <detectJavaApiLink>false</detectJavaApiLink>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

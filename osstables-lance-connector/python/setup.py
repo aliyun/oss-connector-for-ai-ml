@@ -28,13 +28,13 @@ with open(os.path.join(TOPDIR, "README.md"), encoding="utf-8") as fp:
     LONG_DESCRIPTION = fp.read()
 
 requires = [
-    "lance-namespace>=0.8.0",
-    "lance-namespace-urllib3-client>=0.8.0",
+    "lance-namespace>=0.9.0",
+    "lance-namespace-urllib3-client>=0.9.0",
     "urllib3>=1.26",
 ]
 
 setup(
-    name="osstables-lance-connector",
+    name=PACKAGE,
     version=read_version(),
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
@@ -42,6 +42,10 @@ setup(
     author=AUTHOR,
     license="MIT",
     url=URL,
+    project_urls={
+        "Source": URL,
+        "Issues": URL + "/issues",
+    },
     keywords=["aliyun", "oss", "osstables", "lance", "namespace"],
     package_dir={"": "src"},
     packages=find_packages(where="src", exclude=["tests*"]),

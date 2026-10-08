@@ -35,11 +35,13 @@ from lance_namespace import (
     ListTableVersionsRequest,
     ListTableVersionsResponse,
     NamespaceExistsRequest,
+    NamespaceExistsResponse,
     PermissionDeniedError,
     RenameTableRequest,
     RenameTableResponse,
     ServiceUnavailableError,
     TableExistsRequest,
+    TableExistsResponse,
     ThrottlingError,
     UnauthenticatedError,
     from_error_code,
@@ -48,7 +50,6 @@ from lance_namespace_urllib3_client import Configuration, NamespaceApi, TableApi
 from lance_namespace_urllib3_client.exceptions import ApiException
 
 from .sigv4 import (
-    PROP_DOUBLE_URI_ENCODE,
     PROP_REGION,
     PROP_SERVICE,
     PROPERTY_PREFIX,
@@ -62,6 +63,23 @@ __all__ = ["OssTablesNamespace"]
 PROP_URI = PROPERTY_PREFIX + "uri"
 PROP_DELIMITER = PROPERTY_PREFIX + "delimiter"
 PROP_VERIFY_SSL = PROPERTY_PREFIX + "verify_ssl"
+PROP_DOUBLE_URI_ENCODE = PROPERTY_PREFIX + "double_uri_encode"
+
+_SERVICE = "osstables"
+
+
+def _parse_boolean_property(properties, key, default):
+    if key not in properties:
+        return default
+    value = str(properties[key]).lower()
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+    raise ValueError(
+        f"Property '{key}' must be 'true' or 'false', got {properties[key]!r}"
+    )
+
 
 _STATUS_ERRORS = {
     400: InvalidInputError,
@@ -122,15 +140,11 @@ class OssTablesNamespace(LanceNamespace):
         ``https://{bucket}.{region}-internal.oss-tables.aliyuncs.com/lance``
     osstables.region : str (required)
         SigV4 region, e.g. ``cn-hangzhou``
-    osstables.service : str (optional, default ``osstables``)
-        SigV4 service name
     osstables.access_key_id / osstables.secret_access_key : str (optional)
         Explicit credentials; falls back to environment variables
-        (AWS_* then ALIBABA_CLOUD_*)
+        (ALIBABA_CLOUD_* then AWS_*)
     osstables.session_token : str (optional)
         STS session token
-    osstables.double_uri_encode : str (optional, default ``true``)
-        Whether the canonical URI double-encodes path segments
     osstables.delimiter : str (optional, default ``$``)
         Object identifier delimiter
     osstables.verify_ssl : str (optional, default ``true``)
@@ -157,28 +171,31 @@ class OssTablesNamespace(LanceNamespace):
         region = properties.get(PROP_REGION)
         if not region:
             raise ValueError(f"Property '{PROP_REGION}' is required")
-        service = properties.get(PROP_SERVICE, "osstables")
+        service = properties.get(PROP_SERVICE, _SERVICE)
+        if service != _SERVICE:
+            raise ValueError(
+                f"Property '{PROP_SERVICE}' must be '{_SERVICE}', got {service!r}"
+            )
+        double_uri_encode = _parse_boolean_property(
+            properties, PROP_DOUBLE_URI_ENCODE, True
+        )
+        if not double_uri_encode:
+            raise ValueError(
+                f"Property '{PROP_DOUBLE_URI_ENCODE}' must be true; "
+                "OssTables requires double URI encoding"
+            )
         self._uri = uri.rstrip("/")
         self._region = region
         self._service = service
         self._delimiter = properties.get(PROP_DELIMITER, "$")
-        double_uri_encode = str(
-            properties.get(PROP_DOUBLE_URI_ENCODE, "true")
-        ).lower() not in ("false", "0", "no")
-
         credentials = resolve_credentials(properties)
         signer = SigV4Signer(
             region=region,
             service=service,
             credentials=credentials,
-            double_uri_encode=double_uri_encode,
         )
         configuration = Configuration(host=self._uri)
-        verify_ssl = str(properties.get(PROP_VERIFY_SSL, "true")).lower() not in (
-            "false",
-            "0",
-            "no",
-        )
+        verify_ssl = _parse_boolean_property(properties, PROP_VERIFY_SSL, True)
         if not verify_ssl:
             configuration.verify_ssl = False
             import urllib3
@@ -249,14 +266,17 @@ class OssTablesNamespace(LanceNamespace):
                 delimiter=self._delimiter,
             )
 
-    def namespace_exists(self, request: NamespaceExistsRequest) -> None:
+    def namespace_exists(
+        self, request: NamespaceExistsRequest
+    ) -> NamespaceExistsResponse:
         req = _to_model(request, NamespaceExistsRequest)
         with _translate_errors():
-            return self._namespace_api.namespace_exists(
+            self._namespace_api.namespace_exists(
                 id=self._id_string(req.id),
                 namespace_exists_request=req,
                 delimiter=self._delimiter,
             )
+        return NamespaceExistsResponse()
 
     def list_tables(self, request: ListTablesRequest) -> ListTablesResponse:
         req = _to_model(request, ListTablesRequest)
@@ -316,14 +336,15 @@ class OssTablesNamespace(LanceNamespace):
                 delimiter=self._delimiter,
             )
 
-    def table_exists(self, request: TableExistsRequest) -> None:
+    def table_exists(self, request: TableExistsRequest) -> TableExistsResponse:
         req = _to_model(request, TableExistsRequest)
         with _translate_errors():
-            return self._table_api.table_exists(
+            self._table_api.table_exists(
                 id=self._id_string(req.id),
                 table_exists_request=req,
                 delimiter=self._delimiter,
             )
+        return TableExistsResponse()
 
     def deregister_table(
         self, request: DeregisterTableRequest

@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 /**
  * Provider of environment-variable values, injectable so credential resolution can be unit-tested.

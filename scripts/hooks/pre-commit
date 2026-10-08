@@ -1,0 +1,6 @@
+#!/bin/sh
+# osstables-secret-hook
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+exec "$repo_root/scripts/check-secrets.sh" staged

@@ -1,4 +1,4 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -41,6 +41,30 @@ class SigV4SignerTest {
       "c4afb1cc5771d871763a393e44b703571b55cc28424d1a5e86da6ed3c154a4b9";
   private static final String EXPECTED_SIGNATURE =
       "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7";
+
+  // AWS SigV4 test suite: get-vanilla-with-session-token
+  // https://github.com/boto/botocore/tree/1377306cb9be15c684d10fe0e64ea179961ec3f7/tests/unit/auth/aws4_testsuite/get-vanilla-with-session-token
+  private static final String AWS_SESSION_TOKEN =
+      "6e86291e8372ff2a2260956d9b8aae1d763fbf315fa00fa31553b73ebf194267";
+  private static final String AWS_SESSION_EXPECTED_CANONICAL_REQUEST =
+      "GET\n"
+          + "/\n"
+          + "\n"
+          + "host:example.amazonaws.com\n"
+          + "x-amz-date:20150830T123600Z\n"
+          + "x-amz-security-token:"
+          + AWS_SESSION_TOKEN
+          + "\n"
+          + "\n"
+          + "host;x-amz-date;x-amz-security-token\n"
+          + EMPTY_SHA256;
+  private static final String AWS_SESSION_EXPECTED_STRING_TO_SIGN =
+      "AWS4-HMAC-SHA256\n"
+          + "20150830T123600Z\n"
+          + "20150830/us-east-1/service/aws4_request\n"
+          + "067b36aa60031588cea4a4cde1f21215227a047690c72247f1d70b32fbbfad2b";
+  private static final String AWS_SESSION_EXPECTED_SIGNATURE =
+      "07ec1639c89043aa0e3e2de82b96708f198cceab042d4a97044c66dd9f74e7f8";
 
   private static Map<String, String> awsHeaders() {
     Map<String, String> h = new LinkedHashMap<>();
@@ -95,6 +119,29 @@ class SigV4SignerTest {
       sb.append(String.format("%02x", b));
     }
     assertEquals(EXPECTED_SIGNATURE, sb.toString());
+  }
+
+  @Test
+  void awsSessionTokenVectorFullSignature() {
+    Map<String, String> headers = new LinkedHashMap<>();
+    headers.put("host", "example.amazonaws.com");
+    headers.put("x-amz-date", AWS_DATE);
+    headers.put("x-amz-security-token", AWS_SESSION_TOKEN);
+    SigV4Signer.CanonicalRequest creq =
+        SigV4Signer.canonicalRequest("GET", "/", "", headers, EMPTY_SHA256, true);
+    assertEquals(AWS_SESSION_EXPECTED_CANONICAL_REQUEST, creq.text);
+    assertEquals("host;x-amz-date;x-amz-security-token", creq.signedHeaders);
+
+    String scope = "20150830/us-east-1/service/aws4_request";
+    String sts = SigV4Signer.stringToSign(AWS_DATE, scope, creq.text);
+    assertEquals(AWS_SESSION_EXPECTED_STRING_TO_SIGN, sts);
+
+    byte[] key = SigV4Signer.signingKey(AWS_SK, "20150830", "us-east-1", "service");
+    StringBuilder signature = new StringBuilder();
+    for (byte b : SigV4Signer.hmacSha256(key, sts)) {
+      signature.append(String.format("%02x", b));
+    }
+    assertEquals(AWS_SESSION_EXPECTED_SIGNATURE, signature.toString());
   }
 
   // ---- high-level signer (OssTable-style request) ----

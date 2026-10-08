@@ -1,7 +1,8 @@
-package com.aliyun.lance.osstables;
+package com.aliyun.osstables.lance;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,6 +35,10 @@ import org.lance.namespace.model.DeclareTableRequest;
 import org.lance.namespace.model.DeclareTableResponse;
 import org.lance.namespace.model.DescribeTableRequest;
 import org.lance.namespace.model.DescribeTableResponse;
+import org.lance.namespace.model.NamespaceExistsRequest;
+import org.lance.namespace.model.NamespaceExistsResponse;
+import org.lance.namespace.model.TableExistsRequest;
+import org.lance.namespace.model.TableExistsResponse;
 
 /**
  * Contract tests: run {@link OssTablesNamespace} against a local mock HTTP server that verifies
@@ -81,12 +86,12 @@ class OssTablesNamespaceContractTest {
   private LanceNamespace namespace() {
     Map<String, String> extra = new HashMap<>();
     extra.put(SigV4Signer.PROPERTY_SERVICE, TEST_SERVICE);
-    return connect("com.aliyun.lance.osstables.OssTablesNamespace", extra);
+    return connect("com.aliyun.osstables.lance.OssTablesNamespace", extra);
   }
 
   @Test
   void connectByClassPath() {
-    LanceNamespace ns = connect("com.aliyun.lance.osstables.OssTablesNamespace", Collections.emptyMap());
+    LanceNamespace ns = connect("com.aliyun.osstables.lance.OssTablesNamespace", Collections.emptyMap());
     assertTrue(ns.namespaceId().contains("OssTablesNamespace"));
   }
 
@@ -113,6 +118,23 @@ class OssTablesNamespaceContractTest {
   void createNamespace() {
     namespace().createNamespace(new CreateNamespaceRequest().id(Collections.singletonList("my_db")));
     assertTrue(gateway.last().path.startsWith("/lance/v1/namespace/my_db/create"));
+  }
+
+  @Test
+  void namespaceExists() {
+    NamespaceExistsResponse response =
+        namespace()
+            .namespaceExists(new NamespaceExistsRequest().id(Collections.singletonList("my_db")));
+    assertNotNull(response);
+    assertTrue(gateway.last().path.startsWith("/lance/v1/namespace/my_db/exists"));
+  }
+
+  @Test
+  void tableExists() {
+    TableExistsResponse response =
+        namespace().tableExists(new TableExistsRequest().id(Arrays.asList("my_db", "my_table")));
+    assertNotNull(response);
+    assertTrue(gateway.last().path.startsWith("/lance/v1/table/my_db%24my_table/exists"));
   }
 
   @Test
@@ -147,7 +169,7 @@ class OssTablesNamespaceContractTest {
   void sessionTokenHeaderSigned() {
     Map<String, String> extra = new HashMap<>();
     extra.put(SigV4Signer.PROPERTY_SESSION_TOKEN, "sts-session-token");
-    LanceNamespace ns = connect("com.aliyun.lance.osstables.OssTablesNamespace", extra);
+    LanceNamespace ns = connect("com.aliyun.osstables.lance.OssTablesNamespace", extra);
     ns.describeTable(new DescribeTableRequest().id(Arrays.asList("my_db", "my_table")));
     MockGateway.Recorded last = gateway.last();
     assertEquals("sts-session-token", last.headers.get("x-amz-security-token"));
@@ -161,7 +183,7 @@ class OssTablesNamespaceContractTest {
     props.put(SigV4Signer.PROPERTY_REGION, TEST_REGION);
     props.put(SigV4Signer.PROPERTY_ACCESS_KEY_ID, TEST_AK);
     props.put(SigV4Signer.PROPERTY_SECRET_ACCESS_KEY, "wrong-sk");
-    LanceNamespace ns = LanceNamespace.connect("com.aliyun.lance.osstables.OssTablesNamespace", props, null);
+    LanceNamespace ns = LanceNamespace.connect("com.aliyun.osstables.lance.OssTablesNamespace", props, null);
     assertThrows(
         UnauthenticatedException.class,
         () -> ns.describeTable(new DescribeTableRequest().id(Arrays.asList("my_db", "my_table"))));
@@ -249,6 +271,10 @@ class OssTablesNamespaceContractTest {
         respond(exchange, 200, "{\"properties\":{}}");
       } else if (path.endsWith("/create") && path.contains("/table/")) {
         respond(exchange, 200, "{\"location\":\"oss://bucket/my_db/created\",\"version\":1}");
+      } else if (path.endsWith("/exists") && path.contains("/namespace/")) {
+        respond(exchange, 200, "{}");
+      } else if (path.endsWith("/exists") && path.contains("/table/")) {
+        respond(exchange, 200, "{}");
       } else {
         respond(exchange, 404, "{\"code\":4,\"error\":\"no route: " + path + "\"}");
       }
